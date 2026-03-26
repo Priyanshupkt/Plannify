@@ -18,7 +18,7 @@ public class MyTimetableModel : PageModel
     }
 
     public List<SelectListItem> Semesters { get; set; } = new();
-    public Teacher? CurrentTeacher { get; set; }
+    public Plannify.Models.Teacher? CurrentTeacher { get; set; }
     public Semester? CurrentSemester { get; set; }
     public Dictionary<string, Dictionary<string, TimetableSlot?>> Grid { get; set; } = new();
     public List<string> Days { get; set; } = new();

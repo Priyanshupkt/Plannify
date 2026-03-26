@@ -221,7 +221,7 @@
                             @foreach (var activity in Model.RecentActivity)
                             {
                                 <tr>
-                                    <td><small>@activity.PerformedAt?.ToString("g")</small></td>
+                                    <td><small>@activity.PerformedAt.ToString("g")</small></td>
                                     <td>
                                         <span class="badge bg-secondary">@activity.Action</span>
                                     </td>
@@ -262,9 +262,9 @@
                             @foreach (var teacher in Model.OverloadedTeachers.Take(8))
                             {
                                 <tr>
-                                    <td>@teacher.FullName</td>
+                                    <td>@teacher.TeacherName</td>
                                     <td>
-                                        <span class="badge bg-danger">@teacher.MaxWeeklyHours</span>
+                                        <span class="badge bg-danger">@teacher.MaxHours</span>
                                     </td>
                                 </tr>
                             }

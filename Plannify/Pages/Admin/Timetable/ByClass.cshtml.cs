@@ -148,7 +148,7 @@ public class ByClassModel : PageModel
         var bytes = _exportService.ExportClassTimetablePdf(
             classBatch.BatchName,
             semester.Name,
-            semester.AcademicYear?.Name ?? "N/A",
+            semester.AcademicYear?.YearLabel ?? "N/A",
             Grid,
             TimeRanges,
             Days);

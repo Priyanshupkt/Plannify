@@ -17,7 +17,7 @@ public class MyWorkloadModel : PageModel
         _context = context;
     }
 
-    public Teacher? CurrentTeacher { get; set; }
+    public Plannify.Models.Teacher? CurrentTeacher { get; set; }
     public Semester? ActiveSemester { get; set; }
 
     public int WeeklyTeachingHours { get; set; }

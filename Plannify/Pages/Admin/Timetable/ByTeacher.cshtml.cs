@@ -21,7 +21,7 @@ public class ByTeacherModel : PageModel
     public List<SelectListItem> Teachers { get; set; } = new();
     public List<SelectListItem> Semesters { get; set; } = new();
 
-    public Teacher? CurrentTeacher { get; set; }
+    public Plannify.Models.Teacher? CurrentTeacher { get; set; }
     public Semester? CurrentSemester { get; set; }
     public Dictionary<string, Dictionary<string, TimetableSlot?>> Grid { get; set; } = new();
     public List<string> Days { get; set; } = new();

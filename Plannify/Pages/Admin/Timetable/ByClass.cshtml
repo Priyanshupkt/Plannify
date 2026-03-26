@@ -17,7 +17,14 @@
                         <option value="">-- Select Class --</option>
                         @foreach (var cls in Model.ClassBatches)
                         {
-                            <option value="@cls.Value" @(cls.Value == Model.CurrentClass?.Id.ToString() ? "selected" : "")>@cls.Text</option>
+                            @if (cls.Value == Model.CurrentClass?.Id.ToString())
+                            {
+                                <option value="@cls.Value" selected>@cls.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@cls.Value">@cls.Text</option>
+                            }
                         }
                     </select>
                 </div>
@@ -27,7 +34,14 @@
                         <option value="">-- Select Semester --</option>
                         @foreach (var sem in Model.Semesters)
                         {
-                            <option value="@sem.Value" @(sem.Value == Model.CurrentSemester?.Id.ToString() ? "selected" : "")>@sem.Text</option>
+                            @if (sem.Value == Model.CurrentSemester?.Id.ToString())
+                            {
+                                <option value="@sem.Value" selected>@sem.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@sem.Value">@sem.Text</option>
+                            }
                         }
                     </select>
                 </div>

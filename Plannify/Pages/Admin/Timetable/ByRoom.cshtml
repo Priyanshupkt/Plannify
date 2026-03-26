@@ -21,7 +21,14 @@
                         <option value="">-- Select Room --</option>
                         @foreach (var room in Model.Rooms)
                         {
-                            <option value="@room.Value" @(room.Value == Model.CurrentRoom?.Id.ToString() ? "selected" : "")>@room.Text</option>
+                            @if (room.Value == Model.CurrentRoom?.Id.ToString())
+                            {
+                                <option value="@room.Value" selected>@room.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@room.Value">@room.Text</option>
+                            }
                         }
                     </select>
                 </div>
@@ -31,7 +38,14 @@
                         <option value="">-- Select Semester --</option>
                         @foreach (var sem in Model.Semesters)
                         {
-                            <option value="@sem.Value" @(sem.Value == Model.CurrentSemester?.Id.ToString() ? "selected" : "")>@sem.Text</option>
+                            @if (sem.Value == Model.CurrentSemester?.Id.ToString())
+                            {
+                                <option value="@sem.Value" selected>@sem.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@sem.Value">@sem.Text</option>
+                            }
                         }
                     </select>
                 </div>
