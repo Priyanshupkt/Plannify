@@ -7,7 +7,7 @@ using Plannify.Models;
 
 namespace Plannify.Pages.Teacher;
 
-[Authorize(Roles = "Teacher")]
+[Authorize(Roles = "Admin")]
 public class MyTimetableModel : PageModel
 {
     private readonly AppDbContext _context;

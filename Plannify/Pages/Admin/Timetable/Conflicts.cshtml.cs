@@ -70,17 +70,6 @@ public class ConflictsModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostExportConflictsExcelAsync(int semesterId)
-    {
-        var conflicts = await _conflictDetector.GetAllConflictsAsync(semesterId);
-        var semester = await _context.Semesters.FindAsync(semesterId);
-
-        var fileName = $"Conflict_Report_{semester?.Name}_{DateTime.Now:yyyy-MM-dd}.xlsx";
-        var bytes = _exportService.ExportConflictReportExcel(conflicts);
-
-        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-    }
-
     private async Task LoadSemestersAsync()
     {
         Semesters = await _context.Semesters

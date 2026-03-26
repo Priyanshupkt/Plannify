@@ -155,33 +155,4 @@ public class ByClassModel : PageModel
 
         return File(bytes, "application/pdf", fileName);
     }
-
-    public IActionResult OnPostExportExcel(int classId, int semesterId)
-    {
-        // Placeholder for Excel export
-        return RedirectToPage(new { classId, semesterId });
-    }
-
-    public async Task<IActionResult> OnPostExportExcelAsync(int classId, int semesterId)
-    {
-        var classBatch = await _context.ClassBatches.FindAsync(classId);
-        var semester = await _context.Semesters.FindAsync(semesterId);
-
-        if (classBatch == null || semester == null)
-            return NotFound();
-
-        CurrentClass = classBatch;
-        CurrentSemester = semester;
-        await BuildGridAsync(classId, semesterId);
-
-        var fileName = $"Timetable_{classBatch.BatchName}_{semester.Name}_{DateTime.Now:yyyy-MM-dd}.xlsx";
-        var bytes = _exportService.ExportClassTimetableExcel(
-            classBatch.BatchName,
-            semester.Name,
-            Grid,
-            TimeRanges,
-            Days);
-
-        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-    }
 }

@@ -6,7 +6,7 @@ using Plannify.Models;
 
 namespace Plannify.Pages.Teacher;
 
-[Authorize(Roles = "Teacher")]
+[Authorize(Roles = "Admin")]
 public class DashboardModel : PageModel
 {
     private readonly AppDbContext _dbContext;

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -7,6 +8,7 @@ using Plannify.Models;
 
 namespace Plannify.Pages.Teacher;
 
+[Authorize(Roles = "Admin")]
 public class ViewTimetableModel(AppDbContext dbContext) : PageModel
 {
     private readonly AppDbContext _dbContext = dbContext;

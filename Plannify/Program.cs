@@ -32,6 +32,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddRazorPages();
 
 // Register Services
+builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<ConflictDetector>();
 builder.Services.AddScoped<TimetableExportService>();
 

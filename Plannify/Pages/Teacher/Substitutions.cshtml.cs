@@ -6,7 +6,7 @@ using Plannify.Models;
 
 namespace Plannify.Pages.Teacher;
 
-[Authorize(Roles = "Teacher")]
+[Authorize(Roles = "Admin")]
 public class SubstitutionsModel : PageModel
 {
     private readonly AppDbContext _context;

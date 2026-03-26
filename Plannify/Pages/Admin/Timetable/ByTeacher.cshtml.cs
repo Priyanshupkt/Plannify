@@ -142,10 +142,4 @@ public class ByTeacherModel : PageModel
         // Placeholder for PDF export
         return RedirectToPage(new { teacherId, semesterId });
     }
-
-    public IActionResult OnPostExportExcel(int teacherId, int semesterId)
-    {
-        // Placeholder for Excel export
-        return RedirectToPage(new { teacherId, semesterId });
-    }
 }

@@ -136,10 +136,4 @@ public class ByRoomModel : PageModel
         // Placeholder for PDF export
         return RedirectToPage(new { roomId, semesterId });
     }
-
-    public IActionResult OnPostExportExcel(int roomId, int semesterId)
-    {
-        // Placeholder for Excel export
-        return RedirectToPage(new { roomId, semesterId });
-    }
 }

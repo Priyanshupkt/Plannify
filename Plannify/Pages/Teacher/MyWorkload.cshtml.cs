@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 
 namespace Plannify.Pages.Teacher;
 
-[Authorize(Roles = "Teacher")]
+[Authorize(Roles = "Admin")]
 public class MyWorkloadModel : PageModel
 {
     private readonly AppDbContext _context;
