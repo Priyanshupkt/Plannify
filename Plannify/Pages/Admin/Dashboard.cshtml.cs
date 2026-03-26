@@ -2,51 +2,183 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Plannify.Data;
+using Plannify.Models;
+using Plannify.Services;
+using System.Text.Json;
 
 namespace Plannify.Pages.Admin;
 
-[Authorize(Roles = "SuperAdmin,HOD")]
+[Authorize(Roles = "Admin,HOD")]
 public class DashboardModel : PageModel
 {
-    private readonly AppDbContext _dbContext;
+    private readonly AppDbContext _context;
+    private readonly ConflictDetector _conflictDetector;
 
-    public DashboardModel(AppDbContext dbContext)
+    public DashboardModel(AppDbContext context, ConflictDetector conflictDetector)
     {
-        _dbContext = dbContext;
+        _context = context;
+        _conflictDetector = conflictDetector;
     }
 
-    public int TeacherCount { get; set; }
-    public int SubjectCount { get; set; }
-    public int ClassCount { get; set; }
-    public int SlotCount { get; set; }
-    public int DepartmentCount { get; set; }
-    public string CurrentSemester { get; set; } = "Semester 1";
-    public string CurrentAcademicYear { get; set; } = "2025-26";
+    // Statistics
+    public int TotalTeachers { get; set; }
+    public int TotalClasses { get; set; }
+    public int TotalSubjects { get; set; }
+    public int ActiveRooms { get; set; }
+    public int TotalSlots { get; set; }
+    public int ConflictCount { get; set; }
+    public int PendingSubstitutions { get; set; }
+    public int OverloadedTeachersCount { get; set; }
+
+    // Charts data
+    public string TeacherWorkloadChartData { get; set; } = "[]";
+    public string RoomUtilizationChartData { get; set; } = "[]";
+
+    // Alerts
+    public List<string> Alerts { get; set; } = new();
+    public List<AuditLog> RecentActivity { get; set; } = new();
+    public List<TeacherOverload> OverloadedTeachers { get; set; } = new();
+
+    public class TeacherOverload
+    {
+        public string TeacherName { get; set; } = string.Empty;
+        public int WeeklyHours { get; set; }
+        public int MaxHours { get; set; }
+    }
 
     public async Task OnGetAsync()
     {
-        TeacherCount = await _dbContext.Teachers.CountAsync();
-        SubjectCount = await _dbContext.Subjects.CountAsync();
-        ClassCount = await _dbContext.ClassBatches.CountAsync();
-        SlotCount = await _dbContext.TimetableSlots.CountAsync();
-        DepartmentCount = await _dbContext.Departments.CountAsync();
+        // Load statistics
+        TotalTeachers = await _context.Teachers.CountAsync(t => t.IsActive);
+        TotalClasses = await _context.ClassBatches.CountAsync();
+        TotalSubjects = await _context.Subjects.CountAsync();
+        ActiveRooms = await _context.Rooms.CountAsync(r => r.IsActive);
 
-        var currentYear = await _dbContext.AcademicYears
-            .Where(ay => ay.IsActive)
-            .FirstOrDefaultAsync();
-
-        if (currentYear != null)
+        var activeSemester = await _context.Semesters.FirstOrDefaultAsync(s => s.IsActive);
+        if (activeSemester != null)
         {
-            CurrentAcademicYear = currentYear.YearLabel;
+            TotalSlots = await _context.TimetableSlots.CountAsync(s => s.SemesterId == activeSemester.Id);
+            ConflictCount = (await _conflictDetector.GetAllConflictsAsync(activeSemester.Id)).Count;
+        }
 
-            var currentSemester = await _dbContext.Semesters
-                .Where(s => s.AcademicYearId == currentYear.Id && s.IsActive)
-                .FirstOrDefaultAsync();
+        PendingSubstitutions = await _context.SubstitutionRecords
+            .CountAsync(s => s.Date >= DateOnly.FromDateTime(DateTime.Now.AddDays(-7)));
 
-            if (currentSemester != null)
+        // Load teacher workload for chart
+        await LoadTeacherWorkloadChartAsync();
+
+        // Load room utilization for chart
+        await LoadRoomUtilizationChartAsync();
+
+        // Load recent activity
+        RecentActivity = await _context.AuditLogs
+            .OrderByDescending(a => a.PerformedAt)
+            .Take(10)
+            .ToListAsync();
+
+        // Find overloaded teachers
+        var allTeachers = await _context.Teachers
+            .Where(t => t.IsActive)
+            .ToListAsync();
+
+        if (activeSemester != null)
+        {
+            foreach (var teacher in allTeachers)
             {
-                CurrentSemester = currentSemester.Name;
+                var slots = await _context.TimetableSlots
+                    .Where(s => s.TeacherId == teacher.Id && s.SemesterId == activeSemester.Id && s.SlotType != "GAP")
+                    .ToListAsync();
+
+                int weeklyHours = slots.Sum(s => s.EndTime.Hour - s.StartTime.Hour);
+
+                if (weeklyHours > teacher.MaxWeeklyHours)
+                {
+                    OverloadedTeachers.Add(new TeacherOverload
+                    {
+                        TeacherName = teacher.FullName,
+                        WeeklyHours = weeklyHours,
+                        MaxHours = teacher.MaxWeeklyHours
+                    });
+                }
             }
         }
+
+        OverloadedTeachersCount = OverloadedTeachers.Count;
+
+        // Generate alerts
+        if (OverloadedTeachersCount > 0)
+            Alerts.Add($"⚠ {OverloadedTeachersCount} teacher(s) are overloaded");
+
+        if (ConflictCount > 0)
+            Alerts.Add($"⚠ {ConflictCount} conflict(s) detected in current semester");
+
+        if (activeSemester == null)
+            Alerts.Add("⚠ No active semester configured");
+    }
+
+    private async Task LoadTeacherWorkloadChartAsync()
+    {
+        var activeSemester = await _context.Semesters.FirstOrDefaultAsync(s => s.IsActive);
+        if (activeSemester == null)
+            return;
+
+        var teacherWorkloads = new List<object>();
+
+        var teachers = await _context.Teachers
+            .Where(t => t.IsActive)
+            .OrderByDescending(t => t.TimetableSlots.Count(s => s.SemesterId == activeSemester.Id))
+            .Take(10)
+            .ToListAsync();
+
+        foreach (var teacher in teachers)
+        {
+            var slots = await _context.TimetableSlots
+                .Where(s => s.TeacherId == teacher.Id && s.SemesterId == activeSemester.Id && s.SlotType != "GAP")
+                .ToListAsync();
+
+            int hours = slots.Sum(s => s.EndTime.Hour - s.StartTime.Hour);
+            teacherWorkloads.Add(new
+            {
+                name = teacher.Initials,
+                actual = hours,
+                max = teacher.MaxWeeklyHours
+            });
+        }
+
+        TeacherWorkloadChartData = JsonSerializer.Serialize(teacherWorkloads);
+    }
+
+    private async Task LoadRoomUtilizationChartAsync()
+    {
+        var activeSemester = await _context.Semesters.FirstOrDefaultAsync(s => s.IsActive);
+        if (activeSemester == null)
+            return;
+
+        var roomUtilization = new List<object>();
+
+        var rooms = await _context.Rooms
+            .Where(r => r.IsActive)
+            .OrderByDescending(r => r.TimetableSlots.Count(s => s.SemesterId == activeSemester.Id))
+            .Take(5)
+            .ToListAsync();
+
+        foreach (var room in rooms)
+        {
+            int occupied = await _context.TimetableSlots
+                .CountAsync(s => s.RoomId == room.Id && s.SemesterId == activeSemester.Id);
+
+            int available = 36; // 6 days × 6 periods
+            int utilization = available > 0 ? (occupied * 100) / available : 0;
+
+            roomUtilization.Add(new
+            {
+                name = room.RoomNumber,
+                occupied = occupied,
+                available = available,
+                utilization = utilization
+            });
+        }
+
+        RoomUtilizationChartData = JsonSerializer.Serialize(roomUtilization);
     }
 }

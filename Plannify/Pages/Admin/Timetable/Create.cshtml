@@ -1,0 +1,298 @@
+@page
+@model Plannify.Pages.Admin.Timetable.CreateModel
+@{
+    ViewData["Title"] = "Create Timetable Slot";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4">Create Timetable Slot</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Conflicts"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <h6>⚠ Scheduling Conflicts Detected:</h6>
+            @{
+                var conflictsList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(TempData["Conflicts"].ToString());
+                foreach (var conflict in conflictsList ?? new())
+                {
+                    <div>• @conflict</div>
+                }
+            }
+            <small class="text-muted mt-2 d-block">Check "I understand the conflict" and submit again to save anyway.</small>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- LEFT PANEL: Slot Entry Form -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" asp-page-handler="Add">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Section 1: Context -->
+                        <div class="mb-4">
+                            <h6 class="card-subtitle mb-3">Context</h6>
+                            
+                            <div class="mb-3">
+                                <label for="semesterId" class="form-label">Semester</label>
+                                <select class="form-select" id="semesterId" asp-for="Input.SemesterId" asp-items="Model.Semesters" required>
+                                    <option value="">-- Select Semester --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="classBatchId" class="form-label">Class Batch</label>
+                                <select class="form-select" id="classBatchId" asp-for="Input.ClassBatchId" asp-items="Model.ClassBatches" required onchange="loadClassGrid()">
+                                    <option value="">-- Select Class --</option>
+                                </select>
+                                <small class="text-muted">Searchable with Select2</small>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Slot Details -->
+                        <div class="mb-4">
+                            <h6 class="card-subtitle mb-3">Slot Details</h6>
+
+                            <div class="mb-3">
+                                <label for="day" class="form-label">Day</label>
+                                <select class="form-select" id="day" asp-for="Input.Day" asp-items="Model.Days" required>
+                                    <option value="">-- Select Day --</option>
+                                </select>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label for="startTime" class="form-label">Start Time</label>
+                                        <input type="time" class="form-control" id="startTime" asp-for="Input.StartTime" required>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label for="endTime" class="form-label">End Time</label>
+                                        <input type="time" class="form-control" id="endTime" asp-for="Input.EndTime" required onblur="checkConflicts()">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label d-block">Slot Type</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" id="slotTheory" name="Input.SlotType" value="Theory" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()" checked>
+                                    <label class="btn btn-outline-primary" for="slotTheory">Theory</label>
+
+                                    <input type="radio" class="btn-check" id="slotLab" name="Input.SlotType" value="Lab" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()">
+                                    <label class="btn btn-outline-primary" for="slotLab">Lab</label>
+
+                                    <input type="radio" class="btn-check" id="slotGap" name="Input.SlotType" value="GAP" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()">
+                                    <label class="btn btn-outline-primary" for="slotGap">GAP</label>
+
+                                    <input type="radio" class="btn-check" id="slotElective" name="Input.SlotType" value="Elective" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()">
+                                    <label class="btn btn-outline-primary" for="slotElective">Elective</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Assignment (Hidden if GAP) -->
+                        <div class="mb-4" id="assignmentSection">
+                            <h6 class="card-subtitle mb-3">Assignment</h6>
+
+                            <div class="mb-3">
+                                <label for="teacherId" class="form-label">Teacher</label>
+                                <select class="form-select" id="teacherId" asp-for="Input.TeacherId" asp-items="Model.Teachers">
+                                    <option value="">-- Select Teacher --</option>
+                                </select>
+                                <small class="text-muted d-block" id="teacherHours"></small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="subjectId" class="form-label">Subject</label>
+                                <select class="form-select" id="subjectId" asp-for="Input.SubjectId" asp-items="Model.Subjects">
+                                    <option value="">-- Select Subject --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="roomId" class="form-label">Room</label>
+                                <select class="form-select" id="roomId" asp-for="Input.RoomId" asp-items="Model.Rooms">
+                                    <option value="">-- Select Room --</option>
+                                </select>
+                                <div class="mt-2">
+                                    <span id="roomAvailability" class="badge bg-success">Available</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4: Lab Session (Show only if SlotType = Lab) -->
+                        <div class="mb-4" id="labSection" style="display: none;">
+                            <h6 class="card-subtitle mb-3">Lab Session</h6>
+
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" id="isMultiPeriodLab" asp-for="Input.IsMultiPeriodLab" onchange="updateLabTagVisibility()">
+                                <label class="form-check-label" for="isMultiPeriodLab">
+                                    Is Multi-Period Lab
+                                </label>
+                            </div>
+
+                            <div class="mb-3" id="labTagSection" style="display: none;">
+                                <label for="labGroupTag" class="form-label">Lab Group Tag</label>
+                                <input type="text" class="form-control" id="labGroupTag" asp-for="Input.LabGroupTag" placeholder="e.g., Lab-Group-A">
+                            </div>
+                        </div>
+
+                        <!-- Conflict Warning Area -->
+                        <div class="mb-4" id="conflictWarningArea" style="display: none;">
+                            <div class="alert alert-warning">
+                                <h6 class="alert-heading">⚠ Conflicts Detected</h6>
+                                <ul id="conflictsList" class="mb-3 small"></ul>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="ignoreConflicts" asp-for="Input.IgnoreConflicts">
+                                    <label class="form-check-label" for="ignoreConflicts">
+                                        I understand the conflict, save anyway
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit/Clear Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Add Slot</button>
+                            <button type="reset" class="btn btn-secondary">Clear Form</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Class Grid Preview -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Class Timetable Preview</h6>
+                </div>
+                <div class="card-body">
+                    <div id="gridPreview">
+                        <p class="text-muted">Select a class to view the timetable.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateSlotTypeVisibility() {
+            const slotType = document.querySelector('input[name="Input.SlotType"]:checked').value;
+            const assignmentSection = document.getElementById('assignmentSection');
+            const labSection = document.getElementById('labSection');
+
+            if (slotType === 'GAP') {
+                assignmentSection.style.display = 'none';
+                labSection.style.display = 'none';
+            } else {
+                assignmentSection.style.display = 'block';
+                if (slotType === 'Lab') {
+                    labSection.style.display = 'block';
+                } else {
+                    labSection.style.display = 'none';
+                }
+            }
+        }
+
+        function updateLabTagVisibility() {
+            const isMultiPeriod = document.getElementById('isMultiPeriodLab').checked;
+            document.getElementById('labTagSection').style.display = isMultiPeriod ? 'block' : 'none';
+        }
+
+        function loadClassGrid() {
+            const classId = document.getElementById('classBatchId').value;
+            const semesterId = document.getElementById('semesterId').value;
+
+            if (!classId || !semesterId) {
+                document.getElementById('gridPreview').innerHTML = '<p class="text-muted">Select both class and semester.</p>';
+                return;
+            }
+
+            fetch(`?handler=ClassGrid&classId=${classId}&semesterId=${semesterId}`)
+                .then(r => r.json())
+                .then(slots => renderGrid(slots))
+                .catch(e => console.error('Error loading grid:', e));
+        }
+
+        function renderGrid(slots) {
+            if (!slots || slots.length === 0) {
+                document.getElementById('gridPreview').innerHTML = '<p class="text-muted">No slots yet for this class.</p>';
+                return;
+            }
+
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const timeRanges = [...new Set(slots.map(s => `${s.startTime}-${s.endTime}`))].sort();
+
+            let html = '<table class="table table-bordered table-sm">';
+            html += '<thead><tr><th>Time</th>';
+            days.forEach(day => html += `<th>${day.substring(0, 3)}</th>`);
+            html += '</tr></thead><tbody>';
+
+            timeRanges.forEach(timeRange => {
+                html += `<tr><td class="text-nowrap"><small>${timeRange}</small></td>`;
+                days.forEach(day => {
+                    const slot = slots.find(s => s.day === day && `${s.startTime}-${s.endTime}` === timeRange);
+                    if (slot) {
+                        const bgClass = slot.slotType === 'Theory' ? 'bg-white' : 
+                                      slot.slotType === 'Lab' ? 'tg-lab' :
+                                      slot.slotType === 'GAP' ? 'tg-gap' : 'bg-light';
+                        html += `<td class="${bgClass}"><small>${slot.subject}<br>${slot.teacher}<br>${slot.room}</small></td>`;
+                    } else {
+                        html += '<td class="bg-light text-center"><small>Free</small></td>';
+                    }
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('gridPreview').innerHTML = html;
+        }
+
+        async function checkConflicts() {
+            const teacherId = document.getElementById('teacherId').value || 0;
+            const roomId = document.getElementById('roomId').value || 0;
+            const classId = document.getElementById('classBatchId').value;
+            const day = document.getElementById('day').value;
+            const start = document.getElementById('startTime').value;
+            const end = document.getElementById('endTime').value;
+            const semesterId = document.getElementById('semesterId').value;
+
+            if (!classId || !day || !start || !end || !semesterId) return;
+
+            fetch(`?handler=CheckConflicts&teacherId=${teacherId}&roomId=${roomId}&classId=${classId}&day=${day}&start=${start}&end=${end}&semesterId=${semesterId}`)
+                .then(r => r.json())
+                .then(conflicts => {
+                    const warningArea = document.getElementById('conflictWarningArea');
+                    const conflictsList = document.getElementById('conflictsList');
+
+                    if (conflicts.length > 0) {
+                        conflictsList.innerHTML = conflicts.map(c => `<li>${c}</li>`).join('');
+                        warningArea.style.display = 'block';
+                    } else {
+                        warningArea.style.display = 'none';
+                    }
+                })
+                .catch(e => console.error('Error checking conflicts:', e));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSlotTypeVisibility();
+        });
+    </script>
+}

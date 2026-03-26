@@ -1,0 +1,199 @@
+@page
+@model Plannify.Pages.Admin.Timetable.ByClassModel
+@{
+    ViewData["Title"] = "Timetable by Class";
+}
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4">Timetable by Class</h2>
+
+    <!-- Top Controls -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="classSelect" class="form-label">Select Class</label>
+                    <select class="form-select" id="classSelect" onchange="changeClass()">
+                        <option value="">-- Select Class --</option>
+                        @foreach (var cls in Model.ClassBatches)
+                        {
+                            <option value="@cls.Value" @(cls.Value == Model.CurrentClass?.Id.ToString() ? "selected" : "")>@cls.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="semesterSelect" class="form-label">Select Semester</label>
+                    <select class="form-select" id="semesterSelect" onchange="changeSemester()">
+                        <option value="">-- Select Semester --</option>
+                        @foreach (var sem in Model.Semesters)
+                        {
+                            <option value="@sem.Value" @(sem.Value == Model.CurrentSemester?.Id.ToString() ? "selected" : "")>@sem.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="d-grid gap-2 d-lg-flex justify-content-lg-end" style="height: 100%; align-items: flex-end;">
+                <form method="post" asp-page-handler="ExportPdf" style="display: inline;">
+                    <input type="hidden" name="classId" value="@Model.CurrentClass?.Id">
+                    <input type="hidden" name="semesterId" value="@Model.CurrentSemester?.Id">
+                    <button type="submit" class="btn btn-primary" @(Model.CurrentClass == null ? "disabled" : "")>
+                        <i class="fas fa-print"></i> Print PDF
+                    </button>
+                </form>
+                <form method="post" asp-page-handler="ExportExcel" style="display: inline;">
+                    <input type="hidden" name="classId" value="@Model.CurrentClass?.Id">
+                    <input type="hidden" name="semesterId" value="@Model.CurrentSemester?.Id">
+                    <button type="submit" class="btn btn-success" @(Model.CurrentClass == null ? "disabled" : "")>
+                        <i class="fas fa-download"></i> Export Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.CurrentClass != null && Model.CurrentSemester != null && Model.TimeRanges.Count > 0)
+    {
+        <!-- Timetable Grid -->
+        <div class="card mb-4">
+            <div class="card-body p-0" style="overflow-x: auto;">
+                <table class="table table-bordered table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center" style="min-width: 100px;">Time</th>
+                            @foreach (var day in Model.Days)
+                            {
+                                <th class="text-center" style="min-width: 120px;">@day.Substring(0, 3)</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var timeRange in Model.TimeRanges)
+                        {
+                            <tr>
+                                <td class="text-center text-nowrap fw-bold">
+                                    <small>@timeRange</small>
+                                </td>
+                                @foreach (var day in Model.Days)
+                                {
+                                    var slot = Model.Grid[day][timeRange];
+                                    string bgClass = "bg-light";
+                                    
+                                    if (slot != null)
+                                    {
+                                        bgClass = slot.SlotType switch
+                                        {
+                                            "Theory" => "bg-white",
+                                            "Lab" => "tg-lab",
+                                            "GAP" => "tg-gap",
+                                            "Elective" => "bg-light-purple",
+                                            _ => "bg-light"
+                                        };
+                                    }
+
+                                    <td class="@bgClass text-center align-middle" style="min-height: 60px;">
+                                        @if (slot != null)
+                                        {
+                                            <div class="small">
+                                                <strong>@slot.Subject?.Name</strong><br>
+                                                <span class="badge bg-info">@slot.Teacher?.Initials</span><br>
+                                                <span class="text-muted">@slot.Room?.RoomNumber</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Free</span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Daily Statistics</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Day</th>
+                                    <th class="text-center">Teaching Periods</th>
+                                    <th class="text-center">Free Periods</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var day in Model.Days)
+                                {
+                                    <tr>
+                                        <td><strong>@day.Substring(0, 3)</strong></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">@Model.PeriodsPerDay[day]</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">@Model.FreePeriods[day]</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Weekly Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <h3 class="text-primary">@Model.TotalWeeklyPeriods</h3>
+                            <p class="text-muted mb-0">Total Teaching Periods per Week</p>
+                        </div>
+                        <hr>
+                        <div class="small">
+                            <p><span class="badge bg-light-purple">Elective</span></p>
+                            <p><span class="badge tg-lab">Lab</span></p>
+                            <p><span class="badge tg-gap">GAP</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            Select a class and semester to view the timetable.
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function changeClass() {
+            const classId = document.getElementById('classSelect').value;
+            const semesterId = document.getElementById('semesterSelect').value;
+            if (classId && semesterId) {
+                window.location = `?classId=${classId}&semesterId=${semesterId}`;
+            }
+        }
+
+        function changeSemester() {
+            const classId = document.getElementById('classSelect').value;
+            const semesterId = document.getElementById('semesterSelect').value;
+            if (classId && semesterId) {
+                window.location = `?classId=${classId}&semesterId=${semesterId}`;
+            }
+        }
+    </script>
+}

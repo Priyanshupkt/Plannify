@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Plannify.Data;
 using Plannify.Models;
+using Plannify.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,10 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.AddRazorPages();
+
+// Register Services
+builder.Services.AddScoped<ConflictDetector>();
+builder.Services.AddScoped<TimetableExportService>();
 
 var app = builder.Build();
 

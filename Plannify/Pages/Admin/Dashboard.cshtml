@@ -7,93 +7,396 @@
     Layout = "_AdminLayout";
 }
 
-<div class="row">
-    <div class="col-md-3">
-        <div class="card stat-card">
+<!-- Alerts Section -->
+@if (Model.Alerts != null && Model.Alerts.Any())
+{
+    @foreach (var alert in Model.Alerts)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            @alert
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+}
+
+<!-- ROW 1: Stat Cards (Teachers, Classes, Subjects, Rooms) -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-primary text-white">
             <div class="card-body">
-                <h6 class="text-muted mb-2">Total Teachers</h6>
-                <h3 class="mb-0">@Model.TeacherCount</h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-2">Total Teachers</h6>
+                        <h3 class="mb-0">@Model.TotalTeachers</h3>
+                    </div>
+                    <i class="fas fa-users fa-3x opacity-50"></i>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card danger">
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-success text-white">
             <div class="card-body">
-                <h6 class="text-muted mb-2">Total Subjects</h6>
-                <h3 class="mb-0">@Model.SubjectCount</h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-2">Total Classes</h6>
+                        <h3 class="mb-0">@Model.TotalClasses</h3>
+                    </div>
+                    <i class="fas fa-chalkboard fa-3x opacity-50"></i>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card success">
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-info text-white">
             <div class="card-body">
-                <h6 class="text-muted mb-2">Total Classes</h6>
-                <h3 class="mb-0">@Model.ClassCount</h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-2">Total Subjects</h6>
+                        <h3 class="mb-0">@Model.TotalSubjects</h3>
+                    </div>
+                    <i class="fas fa-book fa-3x opacity-50"></i>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card stat-card warning">
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-warning text-white">
             <div class="card-body">
-                <h6 class="text-muted mb-2">Timetable Slots</h6>
-                <h3 class="mb-0">@Model.SlotCount</h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-2">Active Rooms</h6>
+                        <h3 class="mb-0">@Model.ActiveRooms</h3>
+                    </div>
+                    <i class="fas fa-door-open fa-3x opacity-50"></i>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Quick Actions</h5>
-            </div>
+<!-- ROW 2: Stat Cards (Slots, Conflicts, Substitutions, Overloaded) -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-teal text-white">
             <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="/Admin/Teachers">Add New Teacher</a>
-                        <i class="fas fa-arrow-right text-primary"></i>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="/Admin/Subjects">Add New Subject</a>
-                        <i class="fas fa-arrow-right text-primary"></i>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="/Admin/Classes">Add New Class</a>
-                        <i class="fas fa-arrow-right text-primary"></i>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="/Admin/Timetable">Create Timetable Slot</a>
-                        <i class="fas fa-arrow-right text-primary"></i>
-                    </li>
-                </ul>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-2">Total Slots</h6>
+                        <h3 class="mb-0">@Model.TotalSlots</h3>
+                    </div>
+                    <i class="fas fa-th fa-3x opacity-50"></i>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card @(Model.ConflictCount > 0 ? "bg-danger" : "bg-success") text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-2">Active Conflicts</h6>
+                        <h3 class="mb-0">@Model.ConflictCount</h3>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-2">Pending Substitutions</h6>
+                        <h3 class="mb-0">@Model.PendingSubstitutions</h3>
+                    </div>
+                    <i class="fas fa-exchange-alt fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card stat-card @(Model.OverloadedTeachersCount > 0 ? "bg-danger" : "bg-success") text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-2">Overloaded Teachers</h6>
+                        <h3 class="mb-0">@Model.OverloadedTeachersCount</h3>
+                    </div>
+                    <i class="fas fa-hourglass-end fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ROW 3: Charts -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
         <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">System Info</h5>
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Teacher Workload Distribution</h5>
             </div>
             <div class="card-body">
-                <p><strong>Current Semester:</strong> @Model.CurrentSemester</p>
-                <p><strong>Academic Year:</strong> @Model.CurrentAcademicYear</p>
-                <p><strong>Active Departments:</strong> @Model.DepartmentCount</p>
-                <p><strong>Last Updated:</strong> @DateTime.Now.ToString("g")</p>
+                <canvas id="teacherWorkloadChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Room Utilization Rate</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="roomUtilizationChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ROW 4: Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-flash"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="/Admin/Timetable/Create" class="btn btn-primary w-100">
+                            <i class="fas fa-plus"></i> Add Slot
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/Admin/Timetable/Conflicts" class="btn btn-warning w-100">
+                            <i class="fas fa-search"></i> Run Scan
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="/Admin/Substitutions" class="btn btn-info w-100">
+                            <i class="fas fa-exchange-alt"></i> Substitutions
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-secondary w-100" disabled title="Coming Soon">
+                            <i class="fas fa-download"></i> Export Master
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ROW 5: Recent Activity & Overloaded Teachers -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Time</th>
+                            <th>Action</th>
+                            <th>Entity</th>
+                            <th>Details</th>
+                            <th>By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.RecentActivity != null && Model.RecentActivity.Any())
+                        {
+                            @foreach (var activity in Model.RecentActivity)
+                            {
+                                <tr>
+                                    <td><small>@activity.PerformedAt?.ToString("g")</small></td>
+                                    <td>
+                                        <span class="badge bg-secondary">@activity.Action</span>
+                                    </td>
+                                    <td>@activity.EntityName</td>
+                                    <td><small class="text-muted">ID: @activity.EntityId</small></td>
+                                    <td>@activity.PerformedBy</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">No recent activity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-circle"></i> Overloaded Teachers</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Teacher</th>
+                            <th>Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.OverloadedTeachers != null && Model.OverloadedTeachers.Any())
+                        {
+                            @foreach (var teacher in Model.OverloadedTeachers.Take(8))
+                            {
+                                <tr>
+                                    <td>@teacher.FullName</td>
+                                    <td>
+                                        <span class="badge bg-danger">@teacher.MaxWeeklyHours</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" class="text-center text-muted py-3"><small>No overloaded teachers</small></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // Parse chart data from ViewData
+        const teacherWorkloadData = @Html.Raw(Model.TeacherWorkloadChartData ?? "[]");
+        const roomUtilizationData = @Html.Raw(Model.RoomUtilizationChartData ?? "[]");
+
+        // Initialize Teacher Workload Chart (Bar)
+        if (teacherWorkloadData.length > 0) {
+            const ctx1 = document.getElementById('teacherWorkloadChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: teacherWorkloadData.map(d => d.name),
+                    datasets: [
+                        {
+                            label: 'Actual Hours',
+                            data: teacherWorkloadData.map(d => d.actual),
+                            backgroundColor: '#0066cc',
+                            borderColor: '#004499',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Max Hours',
+                            data: teacherWorkloadData.map(d => d.max),
+                            backgroundColor: '#e9ecef',
+                            borderColor: '#999999',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Hours per Week'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize Room Utilization Chart (Doughnut)
+        if (roomUtilizationData.length > 0) {
+            const ctx2 = document.getElementById('roomUtilizationChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: roomUtilizationData.map(d => `${d.name} (${d.utilization.toFixed(0)}%)`),
+                    datasets: [{
+                        data: roomUtilizationData.map(d => d.utilization),
+                        backgroundColor: [
+                            '#2ecc71',
+                            '#3498db',
+                            '#e74c3c',
+                            '#f39c12',
+                            '#9b59b6'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
         // Auto-dismiss alerts
         document.querySelectorAll('.alert').forEach(alert => {
             setTimeout(() => {
                 const bsAlert = new bootstrap.Alert(alert);
                 bsAlert.close();
-            }, 4000);
+            }, 5000);
         });
     </script>
+
+    <style>
+        .stat-card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .bg-teal {
+            background-color: #17a2b8 !important;
+        }
+
+        .card-header {
+            font-weight: 600;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
 }
