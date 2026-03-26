@@ -1,0 +1,229 @@
+@page
+@model Plannify.Pages.Admin.Teachers.IndexModel
+@{
+    ViewData["Title"] = "Teachers Management";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="card-title mb-0">👨‍🏫 Teachers Management</h2>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Add New Teacher</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="Add">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="NewTeacher.FullName" class="form-label">Full Name</label>
+                        <input type="text" asp-for="NewTeacher.FullName" class="form-control" placeholder="e.g., Dr. John Smith" required />
+                        <span asp-validation-for="NewTeacher.FullName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewTeacher.EmployeeCode" class="form-label">Employee Code (Unique)</label>
+                        <input type="text" asp-for="NewTeacher.EmployeeCode" class="form-control" placeholder="e.g., EMP001" required />
+                        <span asp-validation-for="NewTeacher.EmployeeCode" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewTeacher.Email" class="form-label">Email Address</label>
+                        <input type="email" asp-for="NewTeacher.Email" class="form-control" placeholder="teacher@college.edu" required />
+                        <span asp-validation-for="NewTeacher.Email" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewTeacher.Designation" class="form-label">Designation</label>
+                        <input type="text" asp-for="NewTeacher.Designation" class="form-control" placeholder="e.g., Associate Professor" required />
+                        <span asp-validation-for="NewTeacher.Designation" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewTeacher.DepartmentId" class="form-label">Department</label>
+                        <select asp-for="NewTeacher.DepartmentId" asp-items="@(new SelectList(Model.Departments, "Id", "Name"))"
+                                class="form-select" required>
+                            <option value="">-- Select Department --</option>
+                        </select>
+                        <span asp-validation-for="NewTeacher.DepartmentId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewTeacher.MaxWeeklyHours" class="form-label">Max Weekly Hours</label>
+                        <input type="number" asp-for="NewTeacher.MaxWeeklyHours" class="form-control" value="18" min="1" required />
+                        <span asp-validation-for="NewTeacher.MaxWeeklyHours" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Teacher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Teachers List</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%">#</th>
+                        <th>Name</th>
+                        <th>Employee Code</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Workload</th>
+                        <th style="width: 15%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Teachers.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No teachers found. Create one to get started.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var teacher in Model.Teachers)
+                    {
+                        var currentHours = Model.TeacherWorkloads.ContainsKey(teacher.Id) ? Model.TeacherWorkloads[teacher.Id] : 0;
+                        var percentage = (currentHours / teacher.MaxWeeklyHours) * 100;
+                        var workloadBg = percentage >= 100 ? "bg-danger" : percentage >= 80 ? "bg-warning" : "bg-success";
+                        var deptName = Model.Departments.FirstOrDefault(d => d.Id == teacher.DepartmentId)?.Name ?? "N/A";
+
+                        <tr>
+                            <td><strong>@(Model.Teachers.IndexOf(teacher) + 1)</strong></td>
+                            <td><strong>@teacher.FullName</strong></td>
+                            <td><span class="badge bg-light text-dark">@teacher.EmployeeCode</span></td>
+                            <td><small>@teacher.Email</small></td>
+                            <td>@deptName</td>
+                            <td>
+                                <span class="badge @workloadBg">@currentHours.ToString("F1")/@teacher.MaxWeeklyHours hrs (@percentage.ToString("F0")%)</span>
+                            </td>
+                            <td>
+                                <a href="/Admin/Teachers/Profile?id=@teacher.Id" class="btn btn-sm btn-info" title="View Profile">
+                                    <i class="bi bi-person"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal"
+                                        onclick="loadEditForm(@teacher.Id, '@teacher.FullName', '@teacher.EmployeeCode', '@teacher.Email', '@teacher.Designation', @teacher.DepartmentId, @teacher.MaxWeeklyHours)" title="Edit Teacher">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                        onclick="setDeleteData(@teacher.Id, '@teacher.FullName')" title="Delete Teacher">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editModalLabel">Edit Teacher</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <div class="modal-body">
+                    <input type="hidden" id="editTeacherId" name="id" />
+                    <div class="mb-3">
+                        <label for="editFullName" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="editFullName" name="fullName" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmployeeCode" class="form-label">Employee Code</label>
+                        <input type="text" class="form-control" id="editEmployeeCode" name="employeeCode" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="editEmail" name="email" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDesignation" class="form-label">Designation</label>
+                        <input type="text" class="form-control" id="editDesignation" name="designation" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDepartmentId" class="form-label">Department</label>
+                        <select class="form-select" id="editDepartmentId" name="departmentId" required>
+                            @foreach (var dept in Model.Departments)
+                            {
+                                <option value="@dept.Id">@dept.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMaxWeeklyHours" class="form-label">Max Weekly Hours</label>
+                        <input type="number" class="form-control" id="editMaxWeeklyHours" name="maxWeeklyHours" min="1" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Teacher</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete teacher <strong id="deleteTeacherName"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" asp-page-handler="Delete" style="display: inline;">
+                    <input type="hidden" id="deleteTeacherId" name="id" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function loadEditForm(id, fullName, employeeCode, email, designation, departmentId, maxWeeklyHours) {
+        document.getElementById('editTeacherId').value = id;
+        document.getElementById('editFullName').value = fullName;
+        document.getElementById('editEmployeeCode').value = employeeCode;
+        document.getElementById('editEmail').value = email;
+        document.getElementById('editDesignation').value = designation;
+        document.getElementById('editDepartmentId').value = departmentId;
+        document.getElementById('editMaxWeeklyHours').value = maxWeeklyHours;
+    }
+
+    function setDeleteData(id, teacherName) {
+        document.getElementById('deleteTeacherId').value = id;
+        document.getElementById('deleteTeacherName').textContent = teacherName;
+    }
+</script>

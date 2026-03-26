@@ -1,0 +1,246 @@
+@page
+@model Plannify.Pages.Admin.Classes.IndexModel
+@{
+    ViewData["Title"] = "Classes Management";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="card-title mb-0">👥 Class Batches Management</h2>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Add New Class Batch</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="Add">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="NewClassBatch.BatchName" class="form-label">Batch Name</label>
+                        <input type="text" asp-for="NewClassBatch.BatchName" class="form-control" placeholder="e.g., CS-A 2023" required />
+                        <span asp-validation-for="NewClassBatch.BatchName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewClassBatch.Strength" class="form-label">Batch Strength (Students)</label>
+                        <input type="number" asp-for="NewClassBatch.Strength" class="form-control" min="1" required />
+                        <span asp-validation-for="NewClassBatch.Strength" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewClassBatch.DepartmentId" class="form-label">Department</label>
+                        <select asp-for="NewClassBatch.DepartmentId" asp-items="@(new SelectList(Model.Departments, "Id", "Name"))"
+                                class="form-select" required>
+                            <option value="">-- Select Department --</option>
+                        </select>
+                        <span asp-validation-for="NewClassBatch.DepartmentId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewClassBatch.AcademicYearId" class="form-label">Academic Year</label>
+                        <select asp-for="NewClassBatch.AcademicYearId" asp-items="@(new SelectList(Model.AcademicYears, "Id", "YearLabel"))"
+                                class="form-select" required>
+                            <option value="">-- Select Academic Year --</option>
+                        </select>
+                        <span asp-validation-for="NewClassBatch.AcademicYearId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewClassBatch.Semester" class="form-label">Semester</label>
+                        <input type="number" asp-for="NewClassBatch.Semester" class="form-control" min="1" max="8" required />
+                        <span asp-validation-for="NewClassBatch.Semester" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewClassBatch.RoomId" class="form-label">Default Room (Optional)</label>
+                        <select asp-for="NewClassBatch.RoomId" asp-items="@(new SelectList(Model.Rooms, "Id", "RoomNumber"))"
+                                class="form-select">
+                            <option value="">-- None --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Class Batch
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Class Batches List</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%">#</th>
+                        <th>Batch Name</th>
+                        <th>Strength</th>
+                        <th>Department</th>
+                        <th>Semester</th>
+                        <th>Year</th>
+                        <th>Default Room</th>
+                        <th>Slots</th>
+                        <th style="width: 15%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.ClassBatches.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                No class batches found. Create one to get started.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var batch in Model.ClassBatches)
+                    {
+                        var deptName = Model.Departments.FirstOrDefault(d => d.Id == batch.DepartmentId)?.Name ?? "N/A";
+                        var yearLabel = Model.AcademicYears.FirstOrDefault(ay => ay.Id == batch.AcademicYearId)?.YearLabel ?? "N/A";
+                        var roomNumber = Model.Rooms.FirstOrDefault(r => r.Id == batch.RoomId)?.RoomNumber ?? "-";
+
+                        <tr>
+                            <td><strong>@(Model.ClassBatches.IndexOf(batch) + 1)</strong></td>
+                            <td><strong>@batch.BatchName</strong></td>
+                            <td><span class="badge bg-info">@batch.Strength</span></td>
+                            <td>@deptName</td>
+                            <td><span class="badge bg-secondary">Sem @batch.Semester</span></td>
+                            <td><span class="badge bg-warning">@yearLabel</span></td>
+                            <td>@roomNumber</td>
+                            <td><span class="badge bg-primary">@(Model.SlotCounts.ContainsKey(batch.Id) ? Model.SlotCounts[batch.Id] : 0)</span></td>
+                            <td>
+                                <a href="/Admin/Timetable/ByClass?classId=@batch.Id" class="btn btn-sm btn-info" title="View Schedule">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal"
+                                        onclick="loadEditForm(@batch.Id, '@batch.BatchName', @batch.Strength, @batch.DepartmentId, @batch.AcademicYearId, @batch.Semester, @(batch.RoomId ?? 0))" title="Edit Batch">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                        onclick="setDeleteData(@batch.Id, '@batch.BatchName')" title="Delete Batch">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editModalLabel">Edit Class Batch</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <div class="modal-body">
+                    <input type="hidden" id="editClassId" name="id" />
+                    <div class="mb-3">
+                        <label for="editBatchName" class="form-label">Batch Name</label>
+                        <input type="text" class="form-control" id="editBatchName" name="batchName" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editStrength" class="form-label">Batch Strength</label>
+                        <input type="number" class="form-control" id="editStrength" name="strength" min="1" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDepartment" class="form-label">Department</label>
+                        <select class="form-select" id="editDepartment" name="departmentId" required>
+                            @foreach (var dept in Model.Departments)
+                            {
+                                <option value="@dept.Id">@dept.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editAcademicYear" class="form-label">Academic Year</label>
+                        <select class="form-select" id="editAcademicYear" name="academicYearId" required>
+                            @foreach (var year in Model.AcademicYears)
+                            {
+                                <option value="@year.Id">@year.YearLabel</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSemester" class="form-label">Semester</label>
+                        <input type="number" class="form-control" id="editSemester" name="semester" min="1" max="8" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRoom" class="form-label">Default Room</label>
+                        <select class="form-select" id="editRoom" name="roomId">
+                            <option value="">-- None --</option>
+                            @foreach (var room in Model.Rooms)
+                            {
+                                <option value="@room.Id">@room.RoomNumber (@room.BuildingName)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Class Batch</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete class batch <strong id="deleteClassName"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" asp-page-handler="Delete" style="display: inline;">
+                    <input type="hidden" id="deleteClassId" name="id" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function loadEditForm(id, batchName, strength, deptId, yearId, semester, roomId) {
+        document.getElementById('editClassId').value = id;
+        document.getElementById('editBatchName').value = batchName;
+        document.getElementById('editStrength').value = strength;
+        document.getElementById('editDepartment').value = deptId;
+        document.getElementById('editAcademicYear').value = yearId;
+        document.getElementById('editSemester').value = semester;
+        document.getElementById('editRoom').value = roomId || '';
+    }
+
+    function setDeleteData(id, batchName) {
+        document.getElementById('deleteClassId').value = id;
+        document.getElementById('deleteClassName').textContent = batchName;
+    }
+</script>

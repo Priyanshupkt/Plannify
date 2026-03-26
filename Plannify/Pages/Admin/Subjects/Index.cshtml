@@ -1,0 +1,276 @@
+@page
+@model Plannify.Pages.Admin.Subjects.IndexModel
+@{
+    ViewData["Title"] = "Subjects Management";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="card-title mb-0">📖 Subjects Management</h2>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Add New Subject</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="Add">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="NewSubject.Name" class="form-label">Subject Name</label>
+                        <input type="text" asp-for="NewSubject.Name" class="form-control" placeholder="e.g., Data Structures" required />
+                        <span asp-validation-for="NewSubject.Name" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewSubject.Code" class="form-label">Subject Code (Unique)</label>
+                        <input type="text" asp-for="NewSubject.Code" class="form-control" placeholder="e.g., CS201" required />
+                        <span asp-validation-for="NewSubject.Code" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewSubject.Credits" class="form-label">Credits</label>
+                        <input type="number" asp-for="NewSubject.Credits" class="form-control" min="1" max="4" required />
+                        <span asp-validation-for="NewSubject.Credits" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewSubject.SubjectType" class="form-label">Subject Type</label>
+                        <select asp-for="NewSubject.SubjectType" class="form-select" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="Theory">Theory</option>
+                            <option value="Lab">Laboratory</option>
+                            <option value="Elective">Elective</option>
+                        </select>
+                        <span asp-validation-for="NewSubject.SubjectType" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewSubject.DepartmentId" class="form-label">Department</label>
+                        <select asp-for="NewSubject.DepartmentId" asp-items="@(new SelectList(Model.Departments, "Id", "Name"))"
+                                class="form-select" required>
+                            <option value="">-- Select Department --</option>
+                        </select>
+                        <span asp-validation-for="NewSubject.DepartmentId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewSubject.SemesterNumber" class="form-label">Semester Number</label>
+                        <input type="number" asp-for="NewSubject.SemesterNumber" class="form-control" min="1" max="8" required />
+                        <span asp-validation-for="NewSubject.SemesterNumber" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Subject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="departmentFilter" class="form-label">Department</label>
+                    <select id="departmentFilter" name="departmentId" class="form-select">
+                        <option value="">-- All Departments --</option>
+                        @foreach (var dept in Model.Departments)
+                        {
+                            <option value="@dept.Id" selected="@(Model.FilterDepartmentId == dept.Id)">@dept.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="typeFilter" class="form-label">Subject Type</label>
+                    <select id="typeFilter" name="subjectType" class="form-select">
+                        <option value="">-- All Types --</option>
+                        <option value="Theory" selected="@(Model.FilterSubjectType == "Theory")">Theory</option>
+                        <option value="Lab" selected="@(Model.FilterSubjectType == "Lab")">Laboratory</option>
+                        <option value="Elective" selected="@(Model.FilterSubjectType == "Elective")">Elective</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-info">
+                        <i class="bi bi-funnel"></i> Filter
+                    </button>
+                    <a href="/Admin/Subjects/" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-arrow-clockwise"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Subjects List (@Model.Subjects.Count)</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%">#</th>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Department</th>
+                        <th>Semester</th>
+                        <th>Credits</th>
+                        <th style="width: 15%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Subjects.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                No subjects found matching your filters.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var subject in Model.Subjects)
+                    {
+                        var typeBg = subject.SubjectType switch
+                        {
+                            "Theory" => "bg-primary",
+                            "Lab" => "bg-danger",
+                            "Elective" => "bg-warning",
+                            _ => "bg-secondary"
+                        };
+                        var deptName = Model.Departments.FirstOrDefault(d => d.Id == subject.DepartmentId)?.Name ?? "N/A";
+
+                        <tr>
+                            <td><strong>@(Model.Subjects.IndexOf(subject) + 1)</strong></td>
+                            <td><span class="badge bg-info">@subject.Code</span></td>
+                            <td><strong>@subject.Name</strong></td>
+                            <td><span class="badge @typeBg">@subject.SubjectType</span></td>
+                            <td>@deptName</td>
+                            <td><span class="badge bg-secondary">Sem @subject.SemesterNumber</span></td>
+                            <td><span class="badge bg-success">@subject.Credits</span></td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal"
+                                        onclick="loadEditForm(@subject.Id, '@subject.Name', '@subject.Code', @subject.Credits, '@subject.SubjectType', @subject.DepartmentId, @subject.SemesterNumber)" title="Edit Subject">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                        onclick="setDeleteData(@subject.Id, '@subject.Code')" title="Delete Subject">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editModalLabel">Edit Subject</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <div class="modal-body">
+                    <input type="hidden" id="editSubjectId" name="id" />
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Subject Name</label>
+                        <input type="text" class="form-control" id="editName" name="name" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCode" class="form-label">Subject Code</label>
+                        <input type="text" class="form-control" id="editCode" name="code" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCredits" class="form-label">Credits</label>
+                        <input type="number" class="form-control" id="editCredits" name="credits" min="1" max="4" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editType" class="form-label">Subject Type</label>
+                        <select class="form-select" id="editType" name="subjectType" required>
+                            <option value="Theory">Theory</option>
+                            <option value="Lab">Laboratory</option>
+                            <option value="Elective">Elective</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDepartment" class="form-label">Department</label>
+                        <select class="form-select" id="editDepartment" name="departmentId" required>
+                            @foreach (var dept in Model.Departments)
+                            {
+                                <option value="@dept.Id">@dept.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSemester" class="form-label">Semester Number</label>
+                        <input type="number" class="form-control" id="editSemester" name="semesterNumber" min="1" max="8" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Subject</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete subject <strong id="deleteSubjectCode"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" asp-page-handler="Delete" style="display: inline;">
+                    <input type="hidden" id="deleteSubjectId" name="id" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function loadEditForm(id, name, code, credits, subjectType, departmentId, semesterNumber) {
+        document.getElementById('editSubjectId').value = id;
+        document.getElementById('editName').value = name;
+        document.getElementById('editCode').value = code;
+        document.getElementById('editCredits').value = credits;
+        document.getElementById('editType').value = subjectType;
+        document.getElementById('editDepartment').value = departmentId;
+        document.getElementById('editSemester').value = semesterNumber;
+    }
+
+    function setDeleteData(id, subjectCode) {
+        document.getElementById('deleteSubjectId').value = id;
+        document.getElementById('deleteSubjectCode').textContent = subjectCode;
+    }
+</script>

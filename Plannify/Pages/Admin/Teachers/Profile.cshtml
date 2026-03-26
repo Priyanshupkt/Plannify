@@ -1,0 +1,233 @@
+@page "{id:int}"
+@model Plannify.Pages.Admin.Teachers.ProfileModel
+@{
+    ViewData["Title"] = "Teacher Profile";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="card-title mb-0">👤 Teacher Profile</h2>
+        <a href="/Admin/Teachers/" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model.Teacher == null)
+    {
+        <div class="alert alert-warning">
+            Teacher not found.
+        </div>
+        return;
+    }
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Full Name</strong></label>
+                            <p>@Model.Teacher.FullName</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Employee Code</strong></label>
+                            <p><span class="badge bg-info">@Model.Teacher.EmployeeCode</span></p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Email</strong></label>
+                            <p><a href="mailto:@Model.Teacher.Email">@Model.Teacher.Email</a></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Department</strong></label>
+                            <p>@Model.Teacher.Department?.Name</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Designation</strong></label>
+                            <p>@Model.Teacher.Designation</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Max Weekly Hours</strong></label>
+                            <p><span class="badge bg-warning">@Model.Teacher.MaxWeeklyHours hrs</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Workload Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Current Hours</strong></label>
+                            <p>@Model.CurrentHours.ToString("F1") hrs</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Workload %</strong></label>
+                            <p>
+                                @{
+                                    var percentage = (Model.CurrentHours / Model.Teacher.MaxWeeklyHours) * 100;
+                                    var workloadBg = percentage >= 100 ? "bg-danger" : percentage >= 80 ? "bg-warning" : "bg-success";
+                                }
+                                <span class="badge @workloadBg">@percentage.ToString("F0")%</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label"><strong>Active Semester</strong></label>
+                            <p>@(Model.ActiveSemester?.Name ?? "No active semester")</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="progress" style="height: 25px;">
+                                @{
+                                    var progress = Math.Min(percentage, 100);
+                                }
+                                <div class="progress-bar @workloadBg" role="progressbar" style="width: @progress%;" 
+                                     aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
+                                    @progress.ToString("F0")%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Assigned Subjects in Active Semester</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Subject Code</th>
+                        <th>Subject Name</th>
+                        <th>Type</th>
+                        <th>Credits</th>
+                        <th>Classes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.AssignedSubjects.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                No subjects assigned in active semester.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var subject in Model.AssignedSubjects)
+                    {
+                        <tr>
+                            <td><span class="badge bg-info">@subject.Code</span></td>
+                            <td>@subject.Name</td>
+                            <td>
+                                @{
+                                    var typeBg = subject.SubjectType switch
+                                    {
+                                        "Theory" => "bg-primary",
+                                        "Lab" => "bg-danger",
+                                        "Elective" => "bg-warning",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @typeBg">@subject.SubjectType</span>
+                            </td>
+                            <td><span class="badge bg-success">@subject.Credits</span></td>
+                            <td>@(Model.SubjectClassCount.ContainsKey(subject.Id) ? Model.SubjectClassCount[subject.Id] : 0)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Timetable Slots</h5>
+                <button class="btn btn-sm btn-info" data-bs-toggle="collapse" data-bs-target="#slotTable">
+                    <i class="bi bi-eye"></i> Toggle Details
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive collapse show" id="slotTable">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Day</th>
+                        <th>Time</th>
+                        <th>Subject</th>
+                        <th>Class</th>
+                        <th>Room</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.TimetableSlots.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                No timetable slots assigned.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var slot in Model.TimetableSlots.OrderBy(s => s.Day))
+                    {
+                        <tr>
+                            <td><strong>@slot.Day</strong></td>
+                            <td>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</td>
+                            <td>@(slot.Subject?.Name ?? "N/A")</td>
+                            <td>@(slot.ClassBatch?.BatchName ?? "N/A")</td>
+                            <td>@(slot.Room?.RoomNumber ?? "N/A")</td>
+                            <td>
+                                @{
+                                    var slotTypeBg = slot.SlotType switch
+                                    {
+                                        "Theory" => "bg-primary",
+                                        "Lab" => "bg-danger",
+                                        "Elective" => "bg-warning",
+                                        "GAP" => "bg-secondary",
+                                        _ => "bg-dark"
+                                    };
+                                }
+                                <span class="badge @slotTypeBg">@slot.SlotType</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

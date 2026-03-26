@@ -1,0 +1,218 @@
+@page
+@model Plannify.Pages.Admin.Rooms.IndexModel
+@{
+    ViewData["Title"] = "Rooms Management";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="card-title mb-0">🏛️ Rooms Management</h2>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Add New Room</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="Add">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="NewRoom.RoomNumber" class="form-label">Room Number</label>
+                        <input type="text" asp-for="NewRoom.RoomNumber" class="form-control" placeholder="e.g., A101" required />
+                        <span asp-validation-for="NewRoom.RoomNumber" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewRoom.BuildingName" class="form-label">Building Name</label>
+                        <input type="text" asp-for="NewRoom.BuildingName" class="form-control" placeholder="e.g., Building A" required />
+                        <span asp-validation-for="NewRoom.BuildingName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewRoom.Capacity" class="form-label">Capacity</label>
+                        <input type="number" asp-for="NewRoom.Capacity" class="form-control" min="1" required />
+                        <span asp-validation-for="NewRoom.Capacity" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="NewRoom.RoomType" class="form-label">Room Type</label>
+                        <select asp-for="NewRoom.RoomType" class="form-select" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="Lecture">Lecture Hall</option>
+                            <option value="Lab">Laboratory</option>
+                            <option value="Seminar">Seminar Hall</option>
+                            <option value="Hall">Auditorium</option>
+                        </select>
+                        <span asp-validation-for="NewRoom.RoomType" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Room
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Rooms List</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 5%">#</th>
+                        <th>Room Number</th>
+                        <th>Building</th>
+                        <th>Capacity</th>
+                        <th>Type</th>
+                        <th>Slots This Week</th>
+                        <th style="width: 15%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Rooms.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No rooms found. Create one to get started.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var room in Model.Rooms)
+                    {
+                        <tr>
+                            <td><strong>@(Model.Rooms.IndexOf(room) + 1)</strong></td>
+                            <td><strong>@room.RoomNumber</strong></td>
+                            <td>@room.BuildingName</td>
+                            <td>
+                                <span class="badge bg-warning">@room.Capacity</span>
+                            </td>
+                            <td>
+                                @{
+                                    var typeBg = room.RoomType switch
+                                    {
+                                        "Lecture" => "bg-info",
+                                        "Lab" => "bg-danger",
+                                        "Seminar" => "bg-warning",
+                                        "Hall" => "bg-success",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @typeBg">@room.RoomType</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">@(Model.SlotCounts.ContainsKey(room.Id) ? Model.SlotCounts[room.Id] : 0)</span>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal"
+                                        onclick="loadEditForm(@room.Id, '@room.RoomNumber', '@room.BuildingName', @room.Capacity, '@room.RoomType')" title="Edit Room">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                        onclick="setDeleteData(@room.Id, '@room.RoomNumber')" title="Delete Room">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="editModalLabel">Edit Room</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <div class="modal-body">
+                    <input type="hidden" id="editRoomId" name="id" />
+                    <div class="mb-3">
+                        <label for="editRoomNumber" class="form-label">Room Number</label>
+                        <input type="text" class="form-control" id="editRoomNumber" name="roomNumber" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBuildingName" class="form-label">Building Name</label>
+                        <input type="text" class="form-control" id="editBuildingName" name="buildingName" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCapacity" class="form-label">Capacity</label>
+                        <input type="number" class="form-control" id="editCapacity" name="capacity" min="1" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRoomType" class="form-label">Room Type</label>
+                        <select class="form-select" id="editRoomType" name="roomType" required>
+                            <option value="Lecture">Lecture Hall</option>
+                            <option value="Lab">Laboratory</option>
+                            <option value="Seminar">Seminar Hall</option>
+                            <option value="Hall">Auditorium</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Delete Room</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete room <strong id="deleteRoomNumber"></strong>?</p>
+                <p class="text-muted small">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" asp-page-handler="Delete" style="display: inline;">
+                    <input type="hidden" id="deleteRoomId" name="id" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function loadEditForm(id, roomNumber, buildingName, capacity, roomType) {
+        document.getElementById('editRoomId').value = id;
+        document.getElementById('editRoomNumber').value = roomNumber;
+        document.getElementById('editBuildingName').value = buildingName;
+        document.getElementById('editCapacity').value = capacity;
+        document.getElementById('editRoomType').value = roomType;
+    }
+
+    function setDeleteData(id, roomNumber) {
+        document.getElementById('deleteRoomId').value = id;
+        document.getElementById('deleteRoomNumber').textContent = roomNumber;
+    }
+</script>
