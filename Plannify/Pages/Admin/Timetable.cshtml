@@ -48,20 +48,23 @@
                     <span class="text-danger" asp-validation-for="NewSlot.SubjectId"></span>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label for="NewSlot_ClassId" class="form-label">Class</label>
-                    <select class="form-select" id="NewSlot_ClassId" asp-for="NewSlot.ClassId" asp-items="Model.ClassList" required>
+                    <label for="NewSlot_ClassBatchId" class="form-label">Class</label>
+                    <select class="form-select" id="NewSlot_ClassBatchId" asp-for="NewSlot.ClassBatchId" asp-items="Model.ClassList" required>
                         <option value="">-- Select Class --</option>
                     </select>
-                    <span class="text-danger" asp-validation-for="NewSlot.ClassId"></span>
+                    <span class="text-danger" asp-validation-for="NewSlot.ClassBatchId"></span>
                 </div>
             </div>
 
             <div class="row">
-                <div class="col-md-12 mb-3">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="NewSlot_IsGap" asp-for="NewSlot.IsGap" />
-                        <label class="form-check-label" for="NewSlot_IsGap">Mark as GAP</label>
-                    </div>
+                <div class="col-md-6 mb-3">
+                    <label for="SlotType" class="form-label">Slot Type</label>
+                    <select id="SlotType" name="NewSlot.SlotType" class="form-select">
+                        <option value="Theory">Theory</option>
+                        <option value="Lab">Lab</option>
+                        <option value="GAP">GAP</option>
+                        <option value="Elective">Elective</option>
+                    </select>
                 </div>
             </div>
 
@@ -96,10 +99,10 @@
                         <td>@(i + 1)</td>
                         <td>@slot.Day</td>
                         <td>@slot.StartTime – @slot.EndTime</td>
-                        <td>@slot.Teacher?.Name</td>
+                        <td>@slot.Teacher?.FullName</td>
                         <td>@slot.Subject?.Name (@slot.Subject?.Code)</td>
-                        <td>@slot.Class?.BatchName (@slot.Class?.RoomNo)</td>
-                        <td>@(slot.IsGap ? "Yes" : "-")</td>
+                        <td>@slot.ClassBatch?.BatchName</td>
+                        <td>@(slot.SlotType == "GAP" ? "Yes" : "-")</td>
                         <td>
                             <form method="post" asp-page-handler="Delete" asp-route-id="@slot.Id" style="display: inline;">
                                 <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</button>

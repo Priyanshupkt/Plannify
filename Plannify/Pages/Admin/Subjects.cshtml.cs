@@ -9,10 +9,10 @@ public class SubjectsModel(AppDbContext dbContext) : PageModel
 {
     private readonly AppDbContext _dbContext = dbContext;
 
-    public List<Subject> Subjects { get; set; } = new();
+    public List<Plannify.Models.Subject> Subjects { get; set; } = new();
 
     [BindProperty]
-    public Subject NewSubject { get; set; } = new();
+    public Plannify.Models.Subject NewSubject { get; set; } = new();
 
     public async Task OnGetAsync()
     {

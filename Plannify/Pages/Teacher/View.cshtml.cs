@@ -15,7 +15,7 @@ public class ViewTimetableModel(AppDbContext dbContext) : PageModel
     public int? SelectedTeacherId { get; set; }
 
     public SelectList Teachers { get; set; } = default!;
-    public List<TimetableSlot> Slots { get; set; } = new();
+    public List<Plannify.Models.TimetableSlot> Slots { get; set; } = new();
     public string SelectedTeacherName { get; set; } = "";
     public int TotalClasses { get; set; }
     public int TotalGaps { get; set; }
@@ -23,25 +23,25 @@ public class ViewTimetableModel(AppDbContext dbContext) : PageModel
     public async Task OnGetAsync()
     {
         var teachers = await _dbContext.Teachers.ToListAsync();
-        Teachers = new SelectList(teachers, "Id", "Name");
+        Teachers = new SelectList(teachers, "Id", "FullName");
 
         if (SelectedTeacherId.HasValue)
         {
             var teacher = await _dbContext.Teachers.FindAsync(SelectedTeacherId.Value);
             if (teacher != null)
             {
-                SelectedTeacherName = teacher.Name;
+                SelectedTeacherName = teacher.FullName;
 
                 Slots = await _dbContext.TimetableSlots
                     .Where(t => t.TeacherId == SelectedTeacherId.Value)
                     .Include(t => t.Subject)
-                    .Include(t => t.Class)
+                    .Include(t => t.ClassBatch)
                     .OrderBy(t => t.Day)
                     .ThenBy(t => t.StartTime)
                     .ToListAsync();
 
-                TotalClasses = Slots.Count(t => !t.IsGap);
-                TotalGaps = Slots.Count(t => t.IsGap);
+                TotalClasses = Slots.Count(t => t.SlotType != "GAP");
+                TotalGaps = Slots.Count(t => t.SlotType == "GAP");
             }
         }
     }

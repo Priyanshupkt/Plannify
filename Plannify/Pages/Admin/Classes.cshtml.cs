@@ -9,14 +9,14 @@ public class ClassesModel(AppDbContext dbContext) : PageModel
 {
     private readonly AppDbContext _dbContext = dbContext;
 
-    public List<Plannify.Models.Class> Classes { get; set; } = new();
+    public List<Plannify.Models.ClassBatch> Classes { get; set; } = new();
 
     [BindProperty]
-    public Plannify.Models.Class NewClass { get; set; } = new();
+    public Plannify.Models.ClassBatch NewClass { get; set; } = new();
 
     public async Task OnGetAsync()
     {
-        Classes = await Task.FromResult(_dbContext.Classes.ToList());
+        Classes = await Task.FromResult(_dbContext.ClassBatches.ToList());
     }
 
     public async Task<IActionResult> OnPostAddAsync()
@@ -27,17 +27,17 @@ public class ClassesModel(AppDbContext dbContext) : PageModel
             return Page();
         }
 
-        _dbContext.Classes.Add(NewClass);
+        _dbContext.ClassBatches.Add(NewClass);
         await _dbContext.SaveChangesAsync();
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        var classItem = await _dbContext.Classes.FindAsync(id);
+        var classItem = await _dbContext.ClassBatches.FindAsync(id);
         if (classItem != null)
         {
-            _dbContext.Classes.Remove(classItem);
+            _dbContext.ClassBatches.Remove(classItem);
             await _dbContext.SaveChangesAsync();
         }
         return RedirectToPage();

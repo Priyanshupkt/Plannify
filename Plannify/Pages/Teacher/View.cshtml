@@ -51,22 +51,21 @@ else
                 </tr>
             </thead>
             <tbody>
-                @var currentDay = "";
                 @foreach (var slot in Model.Slots)
                 {
                     <tr>
                         <td>@slot.Day</td>
                         <td>@slot.StartTime – @slot.EndTime</td>
-                        <td>@slot.Class?.BatchName (@slot.Class?.RoomNo)</td>
+                        <td>@slot.ClassBatch?.BatchName</td>
                         <td>@slot.Subject?.Name</td>
                         <td>
-                            @if (slot.IsGap)
+                            @if (slot.SlotType == "GAP")
                             {
                                 <span class="badge bg-secondary">GAP</span>
                             }
                             else
                             {
-                                <span class="badge bg-success">Class</span>
+                                <span class="badge bg-success">@slot.SlotType</span>
                             }
                         </td>
                     </tr>

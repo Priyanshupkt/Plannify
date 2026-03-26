@@ -3,27 +3,22 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Plannify.Models;
 
-public class ClassBatch
+public class Semester
 {
     public int Id { get; set; }
 
     [Required]
-    public string BatchName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
-    public int Strength { get; set; }
-    public int Semester { get; set; }
-
-    [ForeignKey("Department")]
-    public int DepartmentId { get; set; }
+    public int SemesterNumber { get; set; }
 
     [ForeignKey("AcademicYear")]
     public int AcademicYearId { get; set; }
 
-    [ForeignKey("Room")]
-    public int? RoomId { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public bool IsActive { get; set; }
 
-    public virtual Department? Department { get; set; }
     public virtual AcademicYear? AcademicYear { get; set; }
-    public virtual Room? Room { get; set; }
     public virtual List<TimetableSlot> TimetableSlots { get; set; } = new();
 }

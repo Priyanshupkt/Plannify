@@ -27,7 +27,7 @@ public class TimetableModel(AppDbContext dbContext) : PageModel
         Slots = await _dbContext.TimetableSlots
             .Include(t => t.Teacher)
             .Include(t => t.Subject)
-            .Include(t => t.Class)
+            .Include(t => t.ClassBatch)
             .OrderBy(t => t.Day)
             .ThenBy(t => t.StartTime)
             .ToListAsync();
@@ -41,7 +41,7 @@ public class TimetableModel(AppDbContext dbContext) : PageModel
             Slots = await _dbContext.TimetableSlots
                 .Include(t => t.Teacher)
                 .Include(t => t.Subject)
-                .Include(t => t.Class)
+                .Include(t => t.ClassBatch)
                 .ToListAsync();
             return Page();
         }
@@ -68,12 +68,12 @@ public class TimetableModel(AppDbContext dbContext) : PageModel
         DayOptions = new SelectList(days);
 
         var teachers = await _dbContext.Teachers.ToListAsync();
-        TeacherList = new SelectList(teachers, "Id", "Name");
+        TeacherList = new SelectList(teachers, "Id", "FullName");
 
         var subjects = await _dbContext.Subjects.ToListAsync();
         SubjectList = new SelectList(subjects, "Id", "Name");
 
-        var classes = await _dbContext.Classes.ToListAsync();
+        var classes = await _dbContext.ClassBatches.ToListAsync();
         ClassList = new SelectList(classes, "Id", "BatchName");
     }
 }

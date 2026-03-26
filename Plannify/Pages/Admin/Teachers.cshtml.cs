@@ -9,10 +9,10 @@ public class TeachersModel(AppDbContext dbContext) : PageModel
 {
     private readonly AppDbContext _dbContext = dbContext;
 
-    public List<Teacher> Teachers { get; set; } = new();
+    public List<Plannify.Models.Teacher> Teachers { get; set; } = new();
 
     [BindProperty]
-    public Teacher NewTeacher { get; set; } = new();
+    public Plannify.Models.Teacher NewTeacher { get; set; } = new();
 
     public async Task OnGetAsync()
     {
