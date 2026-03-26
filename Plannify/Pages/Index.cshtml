@@ -1,10 +1,25 @@
 ﻿@page
-@model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Admin Panel</h5>
+                <p class="card-text">Manage teachers, subjects, classes, and timetable configurations.</p>
+                <a href="/Admin/Teachers" class="btn btn-primary">Go to Admin</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Teacher View</h5>
+                <p class="card-text">View your assigned timetable and schedule information.</p>
+                <a href="/Teacher/View" class="btn btn-primary">Go to Teacher View</a>
+            </div>
+        </div>
+    </div>
 </div>

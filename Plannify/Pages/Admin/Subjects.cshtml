@@ -1,0 +1,81 @@
+@page
+@model SubjectsModel
+@{
+    ViewData["Title"] = "Manage Subjects";
+}
+
+<h1>Manage Subjects</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Add New Subject</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="Add">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="NewSubject_Name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="NewSubject_Name" asp-for="NewSubject.Name" required />
+                        <span class="text-danger" asp-validation-for="NewSubject.Name"></span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="NewSubject_Code" class="form-label">Code</label>
+                        <input type="text" class="form-control" id="NewSubject_Code" asp-for="NewSubject.Code" required />
+                        <span class="text-danger" asp-validation-for="NewSubject.Code"></span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label d-block">&nbsp;</label>
+                        <button type="submit" class="btn btn-success">Add Subject</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.Subjects.Count > 0)
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Subjects.Count; i++)
+                {
+                    var subject = Model.Subjects[i];
+                    <tr>
+                        <td>@(i + 1)</td>
+                        <td>@subject.Name</td>
+                        <td>@subject.Code</td>
+                        <td>
+                            <form method="post" asp-page-handler="Delete" asp-route-id="@subject.Id" style="display: inline;">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info" role="alert">
+        No subjects found.
+    </div>
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

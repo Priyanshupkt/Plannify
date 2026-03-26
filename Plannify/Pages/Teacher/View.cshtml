@@ -1,0 +1,97 @@
+@page
+@model ViewTimetableModel
+@{
+    ViewData["Title"] = "Teacher Timetable";
+}
+
+<h1>My Timetable</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" asp-page="View" class="row g-3">
+            <div class="col-md-8">
+                <label for="SelectedTeacherId" class="form-label">Select Teacher</label>
+                <select class="form-select" id="SelectedTeacherId" asp-for="SelectedTeacherId" asp-items="Model.Teachers">
+                    <option value="">-- Choose a teacher --</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label d-block">&nbsp;</label>
+                <button type="submit" class="btn btn-primary">View Timetable</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.SelectedTeacherId.HasValue)
+{
+    <div class="alert alert-warning" role="alert">
+        Please select a teacher to view their timetable.
+    </div>
+}
+else if (Model.Slots.Count == 0)
+{
+    <div class="alert alert-info" role="alert">
+        No schedule assigned yet.
+    </div>
+}
+else
+{
+    <h2>@Model.SelectedTeacherName's Schedule</h2>
+
+    <div class="table-responsive mb-4">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Day</th>
+                    <th>Time</th>
+                    <th>Class</th>
+                    <th>Subject</th>
+                    <th>Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                @var currentDay = "";
+                @foreach (var slot in Model.Slots)
+                {
+                    <tr>
+                        <td>@slot.Day</td>
+                        <td>@slot.StartTime – @slot.EndTime</td>
+                        <td>@slot.Class?.BatchName (@slot.Class?.RoomNo)</td>
+                        <td>@slot.Subject?.Name</td>
+                        <td>
+                            @if (slot.IsGap)
+                            {
+                                <span class="badge bg-secondary">GAP</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Class</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Workload Summary</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Total Teaching Slots:</strong> @Model.TotalClasses</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Total GAP Slots:</strong> @Model.TotalGaps</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
