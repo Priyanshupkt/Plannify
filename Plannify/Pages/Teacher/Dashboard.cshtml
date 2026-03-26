@@ -1,0 +1,142 @@
+@page "/Teacher/Dashboard"
+@model Plannify.Pages.Teacher.DashboardModel
+@{
+    ViewData["Title"] = "My Timetable";
+    ViewData["PageTitle"] = "My Timetable";
+    ViewData["ActiveNav"] = "MyTimetable";
+    Layout = "_TeacherLayout";
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">This Week</h6>
+                <h3 class="mb-0">@Model.ThisWeekSlots</h3>
+                <small class="text-muted">Teaching Slots</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">Total Hours</h6>
+                <h3 class="mb-0">@Model.TotalHours</h3>
+                <small class="text-muted">per week</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">Classes</h6>
+                <h3 class="mb-0">@Model.ClassCount</h3>
+                <small class="text-muted">Teaching</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">Substitutions</h6>
+                <h3 class="mb-0">@Model.PendingSubstitutions</h3>
+                <small class="text-muted">Pending</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📅 This Week's Schedule</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.WeekSlots.Count > 0)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Time</th>
+                                    <th>Subject</th>
+                                    <th>Class</th>
+                                    <th>Room</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var slot in Model.WeekSlots)
+                                {
+                                    <tr>
+                                        <td><strong>@slot.Day</strong></td>
+                                        <td>@slot.StartTime - @slot.EndTime</td>
+                                        <td>@slot.Subject?.Name</td>
+                                        <td>@slot.ClassBatch?.BatchName</td>
+                                        <td>@(slot.Room?.RoomNumber ?? "-")</td>
+                                        <td>
+                                            <span class="badge badge-@slot.SlotType.ToLower()">@slot.SlotType</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4">No classes scheduled this week</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Quick Links</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="/Teacher/Dashboard" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar"></i> Full Timetable
+                    </a>
+                    <a href="/Teacher/Workload" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tasks"></i> My Workload
+                    </a>
+                    <a href="/Teacher/Substitutions" class="list-group-item list-group-item-action">
+                        <i class="fas fa-exchange"></i> Substitutions
+                    </a>
+                    <a href="/Auth/ChangePassword" class="list-group-item list-group-item-action">
+                        <i class="fas fa-key"></i> Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Info</h5>
+            </div>
+            <div class="card-body" style="font-size: 0.9rem;">
+                <p><strong>Academic Year:</strong> @Model.CurrentAcademicYear</p>
+                <p><strong>Current Semester:</strong> @Model.CurrentSemester</p>
+                <p><strong>Department:</strong> @Model.Department</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-dismiss alerts
+        document.querySelectorAll('.alert').forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 4000);
+        });
+    </script>
+}

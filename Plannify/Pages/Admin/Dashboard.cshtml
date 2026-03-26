@@ -1,0 +1,99 @@
+@page "/Admin/Dashboard"
+@model Plannify.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    ViewData["PageTitle"] = "Dashboard";
+    ViewData["ActiveNav"] = "Dashboard";
+    Layout = "_AdminLayout";
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">Total Teachers</h6>
+                <h3 class="mb-0">@Model.TeacherCount</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">Total Subjects</h6>
+                <h3 class="mb-0">@Model.SubjectCount</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">Total Classes</h6>
+                <h3 class="mb-0">@Model.ClassCount</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <h6 class="text-muted mb-2">Timetable Slots</h6>
+                <h3 class="mb-0">@Model.SlotCount</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/Admin/Teachers">Add New Teacher</a>
+                        <i class="fas fa-arrow-right text-primary"></i>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/Admin/Subjects">Add New Subject</a>
+                        <i class="fas fa-arrow-right text-primary"></i>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/Admin/Classes">Add New Class</a>
+                        <i class="fas fa-arrow-right text-primary"></i>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/Admin/Timetable">Create Timetable Slot</a>
+                        <i class="fas fa-arrow-right text-primary"></i>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">System Info</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Current Semester:</strong> @Model.CurrentSemester</p>
+                <p><strong>Academic Year:</strong> @Model.CurrentAcademicYear</p>
+                <p><strong>Active Departments:</strong> @Model.DepartmentCount</p>
+                <p><strong>Last Updated:</strong> @DateTime.Now.ToString("g")</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-dismiss alerts
+        document.querySelectorAll('.alert').forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 4000);
+        });
+    </script>
+}

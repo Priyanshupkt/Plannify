@@ -195,3 +195,192 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* ===== ADMIN LAYOUT STYLES ===== */
+
+/* Sidebar Layout */
+.sidebar {
+  width: 250px;
+  background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+  color: white;
+  min-height: 100vh;
+  padding: 0;
+  overflow-y: auto;
+  position: fixed;
+  left: 0;
+  top: 0;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.user-info {
+  padding: 1rem 1.5rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+}
+
+.user-info .badge {
+  margin-top: 0.5rem;
+}
+
+.sidebar-menu {
+  padding: 1rem 0;
+}
+
+.menu-section {
+  margin: 0.5rem 0;
+}
+
+.menu-title {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-left-color: #0d6efd;
+  padding-left: 1.8rem;
+}
+
+.menu-item.active {
+  background-color: rgba(13, 110, 253, 0.2);
+  color: white;
+  border-left-color: #0d6efd;
+  font-weight: 600;
+}
+
+.menu-item i {
+  margin-right: 0.75rem;
+  width: 20px;
+  text-align: center;
+}
+
+.btn-logout {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0.75rem 1.5rem;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-left-color: #0d6efd;
+}
+
+/* Main Content */
+.main-content {
+  margin-left: 250px;
+  background-color: #f5f6fa;
+  min-height: 100vh;
+}
+
+.topbar {
+  background-color: white;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.topbar-left {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.page-content {
+  padding: 2rem 1.5rem;
+}
+
+/* Scrollbar styling for sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .sidebar {
+    width: 200px;
+  }
+
+  .main-content {
+    margin-left: 200px;
+  }
+
+  .menu-item {
+    padding: 0.65rem 1rem;
+  }
+
+  .menu-title {
+    padding: 0.65rem 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -250px;
+    z-index: 1000;
+    transition: left 0.3s ease;
+  }
+
+  .sidebar.show {
+    left: 0;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .topbar {
+    padding: 0.75rem 1rem;
+  }
+
+  .page-content {
+    padding: 1.5rem 1rem;
+  }
+}

@@ -1,0 +1,147 @@
+@page "/Auth/Login"
+@model Plannify.Pages.Auth.LoginModel
+@{
+    ViewData["Title"] = "Login - Faculty TimeGrid Pro";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 2.5rem;
+        }
+        .college-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .college-header h1 {
+            font-size: 1.8rem;
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .college-header p {
+            color: #777;
+            font-size: 0.9rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .form-control {
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-signin {
+            width: 100%;
+            padding: 0.75rem;
+            font-weight: 600;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-signin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        .alert {
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+        .form-check {
+            margin-bottom: 1rem;
+        }
+        .form-check-input {
+            border-radius: 4px;
+        }
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+        .text-danger {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="college-header">
+            <h1>🎓 Faculty TimeGrid Pro</h1>
+            <p>College Timetable Management System</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @ViewData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <form method="post">
+            <div class="form-group">
+                <label for="Email" class="form-label">Email Address</label>
+                <input type="email" class="form-control @(ModelState.ContainsKey("Email") && !ModelState["Email"].Errors.Any() ? "" : "")" 
+                       id="Email" asp-for="LoginInput.Email" placeholder="Enter your email" required>
+                <span asp-validation-for="LoginInput.Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="Password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="Password" asp-for="LoginInput.Password" 
+                       placeholder="Enter your password" required>
+                <span asp-validation-for="LoginInput.Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="RememberMe" asp-for="LoginInput.RememberMe">
+                <label class="form-check-label" for="RememberMe">Remember me for 30 days</label>
+            </div>
+
+            <button type="submit" class="btn btn-signin">Sign In</button>
+        </form>
+
+        <hr style="margin: 2rem 0; border-color: #e0e0e0;">
+        <p style="text-align: center; color: #999; font-size: 0.9rem;">
+            Admin credentials required to access
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
