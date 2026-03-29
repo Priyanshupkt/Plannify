@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Plannify.Application.Contracts;
 using Plannify.Data;
 using Plannify.Models;
-using Plannify.Services;
 using System.Text.Json;
 
 namespace Plannify.Pages.Admin;
@@ -13,15 +12,21 @@ public class DashboardModel : PageModel
     private readonly AppDbContext _context;
     private readonly IConflictDetectorService _conflictDetector;
     private readonly ISubstitutionService _substitutionService;
+    private readonly ISemesterService _semesterService;
+    private readonly ITeacherService _teacherService;
 
     public DashboardModel(
         AppDbContext context,
         IConflictDetectorService conflictDetector,
-        ISubstitutionService substitutionService)
+        ISubstitutionService substitutionService,
+        ISemesterService semesterService,
+        ITeacherService teacherService)
     {
         _context = context;
         _conflictDetector = conflictDetector;
         _substitutionService = substitutionService;
+        _semesterService = semesterService;
+        _teacherService = teacherService;
     }
 
     // Statistics
