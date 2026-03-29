@@ -1,14 +1,13 @@
 using AutoMapper;
+using DomainSemester = Plannify.Domain.Entities.Semester;
 using Plannify.Application.Common;
 using Plannify.Application.Contracts;
 using Plannify.Application.DTOs;
 using Plannify.Domain.Entities;
 using Plannify.Services;
 using Plannify.Data;
-using Plannify.Models;
 using Microsoft.EntityFrameworkCore;
-using domainTeacher = Plannify.Domain.Entities.Teacher;
-using domainSemester = Plannify.Domain.Entities.Semester;
+
 
 namespace Plannify.Application.Services;
 
@@ -158,7 +157,7 @@ public class TeacherService : ITeacherService
                 return Result<int>.Failure($"Teacher with employee code '{request.EmployeeCode}' already exists");
 
             // Use domain business logic to create entity
-            var createResult = domainTeacher.Create(
+            var createResult = Teacher.Create(
                 request.FullName,
                 request.EmployeeCode,
                 request.Email,
@@ -328,11 +327,11 @@ public class TeacherService : ITeacherService
     }
 
     // Helper method
-    private Task<domainSemester?> GetActiveSemesterAsync()
+    private Task<DomainSemester?> GetActiveSemesterAsync()
     {
         // TODO: Inject a SemesterRepository or similar
         // For now, return null - this will be refactored
-        return Task.FromResult<domainSemester?>(null);
+        return Task.FromResult<DomainSemester?>(null);
     }
 }
 

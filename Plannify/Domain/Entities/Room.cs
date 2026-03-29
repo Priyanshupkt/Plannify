@@ -8,6 +8,14 @@ namespace Plannify.Domain.Entities;
 /// </summary>
 public class Room
 {
+    // Parameterless constructor for EF Core
+    public Room()
+    {
+        RoomNumber = string.Empty;
+        BuildingName = string.Empty;
+        RoomType = "Lecture";
+    }
+
     private Room(int id, string roomNumber, string buildingName, int capacity, string roomType)
     {
         Id = id;
@@ -17,11 +25,15 @@ public class Room
         RoomType = roomType;
     }
 
-    public int Id { get; private set; }
-    public string RoomNumber { get; private set; }
-    public string BuildingName { get; private set; }
-    public int Capacity { get; private set; }
-    public string RoomType { get; private set; }
+    public int Id { get; set; }
+    public string RoomNumber { get; set; }
+    public string BuildingName { get; set; }
+    public int Capacity { get; set; }
+    public string RoomType { get; set; }
+    public bool IsActive { get; set; } = true;
+    
+    // Navigation property
+    public ICollection<TimetableSlot>? TimetableSlots { get; set; }
 
     /// <summary>
     /// Factory method to create a new Room with business rule validation

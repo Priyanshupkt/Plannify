@@ -1,5 +1,4 @@
 using Plannify.Application.Common;
-using Plannify.Models;
 
 namespace Plannify.Domain.Entities;
 
@@ -10,22 +9,21 @@ namespace Plannify.Domain.Entities;
 public class Teacher
 {
     // Properties with private setters - only set through Create() or explicit methods
-    public int Id { get; private set; }
-    public string FullName { get; private set; } = string.Empty;
-    public string EmployeeCode { get; private set; } = string.Empty;
-    public string Email { get; private set; } = string.Empty;
-    public string Initials { get; private set; } = string.Empty;
+    public int Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Initials { get; set; } = string.Empty;
     public string Designation { get; set; } = "Assistant Professor";
     public int MaxWeeklyHours { get; set; } = 18;
-    public int DepartmentId { get; private set; }
+    public int DepartmentId { get; set; }
     public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
     // Navigation properties - private to prevent direct modification
-    public virtual Department? Department { get; private set; }
-    public virtual IReadOnlyList<TimetableSlot> TimetableSlots { get; private set; } 
-        = new List<TimetableSlot>();
+    public virtual Department? Department { get; set; }
+    public virtual ICollection<TimetableSlot>? TimetableSlots { get; set; }
 
     /// <summary>
     /// Domain method: Check if teacher can accept more hours

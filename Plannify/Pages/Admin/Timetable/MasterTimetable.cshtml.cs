@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 
 namespace Plannify.Pages.Admin.Timetable;
 

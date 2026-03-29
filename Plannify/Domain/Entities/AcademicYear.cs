@@ -8,6 +8,12 @@ namespace Plannify.Domain.Entities;
 /// </summary>
 public class AcademicYear
 {
+    // Parameterless constructor for EF Core
+    public AcademicYear()
+    {
+        YearLabel = string.Empty;
+    }
+
     private AcademicYear(int id, string yearLabel, DateTime startDate, DateTime endDate)
     {
         Id = id;
@@ -16,11 +22,11 @@ public class AcademicYear
         EndDate = endDate;
     }
 
-    public int Id { get; private set; }
-    public string YearLabel { get; private set; }
-    public DateTime StartDate { get; private set; }
-    public DateTime EndDate { get; private set; }
-    public bool IsActive { get; private set; } = true;
+    public int Id { get; set; }
+    public string YearLabel { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public bool IsActive { get; set; } = true;
 
     /// <summary>
     /// Factory method to create a new AcademicYear with business rule validation

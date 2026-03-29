@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 using System.Text.Json;
 
 namespace Plannify.Pages.Admin.Timetable;
@@ -184,7 +184,7 @@ public class CreateModel : PageModel
             return NotFound();
 
         // Check for substitution records
-        var hasSubstitutions = await _context.SubstitutionRecords
+        var hasSubstitutions = await _context.Substitutions
             .AnyAsync(s => s.TimetableSlotId == id);
 
         if (hasSubstitutions)

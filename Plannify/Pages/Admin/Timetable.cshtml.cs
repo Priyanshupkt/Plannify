@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 
 namespace Plannify.Pages.Admin;
 

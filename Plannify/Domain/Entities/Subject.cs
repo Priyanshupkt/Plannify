@@ -8,6 +8,13 @@ namespace Plannify.Domain.Entities;
 /// </summary>
 public class Subject
 {
+    // Parameterless constructor for EF Core
+    public Subject()
+    {
+        Name = string.Empty;
+        Code = string.Empty;
+    }
+
     private Subject(int id, string name, string code, int departmentId, int semesterNumber, int credits, int maxClassesPerWeek)
     {
         Id = id;
@@ -19,13 +26,18 @@ public class Subject
         MaxClassesPerWeek = maxClassesPerWeek;
     }
 
-    public int Id { get; private set; }
-    public string Name { get; private set; }
-    public string Code { get; private set; }
-    public int DepartmentId { get; private set; }
-    public int SemesterNumber { get; private set; }
-    public int Credits { get; private set; }
-    public int MaxClassesPerWeek { get; private set; }
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Code { get; set; }
+    public int DepartmentId { get; set; }
+    public int SemesterNumber { get; set; }
+    public int Credits { get; set; }
+    public int MaxClassesPerWeek { get; set; }
+    
+    // Navigation property
+    public string? SubjectType { get; set; } = "Theory"; // Theory, Lab, Practical, etc.
+    public Department? Department { get; set; }
+    public ICollection<TimetableSlot>? TimetableSlots { get; set; }
 
     /// <summary>
     /// Factory method to create a new Subject with business rule validation

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 
 namespace Plannify.Pages.Admin.Teachers;
 
@@ -25,7 +25,7 @@ public class ProfileModel : PageModel
         _context = context;
     }
 
-    public Models.Teacher? Teacher { get; set; }
+    public Teacher? Teacher { get; set; }
     public Semester? ActiveSemester { get; set; }
     public decimal CurrentHours { get; set; } = 0;
     public List<Subject> AssignedSubjects { get; set; } = new();

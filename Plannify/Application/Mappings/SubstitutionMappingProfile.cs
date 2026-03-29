@@ -1,7 +1,6 @@
 using AutoMapper;
 using Plannify.Application.DTOs;
 using Plannify.Domain.Entities;
-using Plannify.Models;
 
 namespace Plannify.Application.Mappings;
 

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 using System.Text.Json;
 
 namespace Plannify.Pages.Admin.Substitutions;
@@ -28,7 +28,7 @@ public class IndexModel : PageModel
     public SubstitutionInput Input { get; set; } = new();
 
     public List<SelectListItem> Teachers { get; set; } = new();
-    public List<SubstitutionRecord> SubstitutionHistory { get; set; } = new();
+    public List<Substitution> SubstitutionHistory { get; set; } = new();
 
     public class SubstitutionInput
     {
@@ -148,7 +148,7 @@ public class IndexModel : PageModel
         }
 
         // Check for existing substitution on same date/slot
-        var existingSubstitution = await _context.SubstitutionRecords
+        var existingSubstitution = await _context.Substitutions
             .AnyAsync(s => s.TimetableSlotId == Input.TimetableSlotId && s.Date == Input.Date);
 
         if (existingSubstitution)
@@ -159,7 +159,7 @@ public class IndexModel : PageModel
         }
 
         // Create substitution record
-        var substitution = new SubstitutionRecord
+        var substitution = new Substitution
         {
             TimetableSlotId = Input.TimetableSlotId,
             OriginalTeacherId = Input.AbsentTeacherId,
@@ -169,7 +169,7 @@ public class IndexModel : PageModel
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.SubstitutionRecords.Add(substitution);
+        _context.Substitutions.Add(substitution);
         await _context.SaveChangesAsync();
 
         // TODO: Add audit logging via service
@@ -192,14 +192,14 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        var substitution = await _context.SubstitutionRecords
+        var substitution = await _context.Substitutions
             .Include(s => s.TimetableSlot)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (substitution == null)
             return NotFound();
 
-        _context.SubstitutionRecords.Remove(substitution);
+        _context.Substitutions.Remove(substitution);
         await _context.SaveChangesAsync();
 
         // TODO: Add audit logging via service
@@ -218,7 +218,7 @@ public class IndexModel : PageModel
     {
         if (_context == null) return;
 
-        SubstitutionHistory = await _context.SubstitutionRecords
+        SubstitutionHistory = await _context.Substitutions
             .Include(s => s.OriginalTeacher!)
             .Include(s => s.SubstituteTeacher!)
             .Include(s => s.TimetableSlot!)

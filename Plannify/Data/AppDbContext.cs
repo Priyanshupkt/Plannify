@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 
 namespace Plannify.Data;
 
@@ -15,8 +15,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Subject> Subjects { get; set; }
     public DbSet<ClassBatch> ClassBatches { get; set; }
     public DbSet<TimetableSlot> TimetableSlots { get; set; }
-    public DbSet<SubstitutionRecord> SubstitutionRecords { get; set; }
-    public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<Substitution> Substitutions { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set;}
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -46,13 +46,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .HasForeignKey(t => t.RoomId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.Entity<SubstitutionRecord>()
+        builder.Entity<Substitution>()
             .HasOne(s => s.OriginalTeacher)
             .WithMany()
             .HasForeignKey(s => s.OriginalTeacherId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Entity<SubstitutionRecord>()
+        builder.Entity<Substitution>()
             .HasOne(s => s.SubstituteTeacher)
             .WithMany()
             .HasForeignKey(s => s.SubstituteTeacherId)

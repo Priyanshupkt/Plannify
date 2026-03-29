@@ -1,5 +1,5 @@
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 
 namespace Plannify.Services;
 

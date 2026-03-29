@@ -8,6 +8,12 @@ namespace Plannify.Domain.Entities;
 /// </summary>
 public class Semester
 {
+    // Parameterless constructor for EF Core
+    public Semester()
+    {
+        Name = string.Empty;
+    }
+
     private Semester(int id, string name, int semesterNumber, int academicYearId, DateTime startDate, DateTime endDate)
     {
         Id = id;
@@ -18,13 +24,16 @@ public class Semester
         EndDate = endDate;
     }
 
-    public int Id { get; private set; }
-    public string Name { get; private set; }
-    public int SemesterNumber { get; private set; }
-    public int AcademicYearId { get; private set; }
-    public DateTime StartDate { get; private set; }
-    public DateTime EndDate { get; private set; }
-    public bool IsActive { get; private set; } = true;
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public int SemesterNumber { get; set; }
+    public int AcademicYearId { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public bool IsActive { get; set; } = true;
+    
+    // Navigation property
+    public AcademicYear? AcademicYear { get; set; }
 
     /// <summary>
     /// Factory method to create a new Semester with business rule validation

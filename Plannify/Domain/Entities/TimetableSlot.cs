@@ -8,6 +8,15 @@ namespace Plannify.Domain.Entities;
 /// </summary>
 public class TimetableSlot
 {
+    // Parameterless constructor for EF Core
+    public TimetableSlot() 
+    {
+        Day = string.Empty;
+        StartTime = TimeOnly.MinValue;
+        EndTime = TimeOnly.MinValue;
+        SlotType = "Theory";
+    }
+
     private TimetableSlot(
         int id,
         int semesterId,
@@ -36,18 +45,29 @@ public class TimetableSlot
         LabGroupTag = labGroupTag;
     }
 
-    public int Id { get; private set; }
-    public int SemesterId { get; private set; }
-    public string Day { get; private set; }
-    public TimeOnly StartTime { get; private set; }
-    public TimeOnly EndTime { get; private set; }
-    public int ClassBatchId { get; private set; }
-    public int? TeacherId { get; private set; }
-    public int? SubjectId { get; private set; }
-    public int? RoomId { get; private set; }
-    public string SlotType { get; private set; }
-    public bool IsLabSession { get; private set; }
-    public string? LabGroupTag { get; private set; }
+    public int Id { get; set; }
+    public int SemesterId { get; set; }
+    public string Day { get; set; }
+    public TimeOnly StartTime { get; set; }
+    public TimeOnly EndTime { get; set; }
+    public int ClassBatchId { get; set; }
+    public int? TeacherId { get; set; }
+    public int? SubjectId { get; set; }
+    public int? RoomId { get; set; }
+    public string SlotType { get; set; }
+    public bool IsLabSession { get; set; }
+    public string? LabGroupTag { get; set; }
+    
+    // Audit fields
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string? CreatedBy { get; set; }
+
+    // Navigation properties
+    public Semester? Semester { get; set; }
+    public ClassBatch? ClassBatch { get; set; }
+    public Teacher? Teacher { get; set; }
+    public Subject? Subject { get; set; }
+    public Room? Room { get; set; }
 
     private static readonly string[] ValidDays = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
     private static readonly string[] ValidSlotTypes = { "Theory", "Lab", "Practical", "Seminar", "Tutorial", "Project" };

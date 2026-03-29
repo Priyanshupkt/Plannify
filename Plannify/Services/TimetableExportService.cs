@@ -1,6 +1,6 @@
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 
 namespace Plannify.Services;
 

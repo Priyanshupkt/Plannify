@@ -3,7 +3,6 @@ using Plannify.Application.Common;
 using Plannify.Application.Contracts;
 using Plannify.Application.DTOs;
 using Plannify.Domain.Entities;
-using Plannify.Models;
 using Plannify.Services;
 
 namespace Plannify.Application.Services;

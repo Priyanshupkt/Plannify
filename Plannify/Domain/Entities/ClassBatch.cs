@@ -8,6 +8,12 @@ namespace Plannify.Domain.Entities;
 /// </summary>
 public class ClassBatch
 {
+    // Parameterless constructor for EF Core
+    public ClassBatch()
+    {
+        BatchName = string.Empty;
+    }
+
     private ClassBatch(int id, string batchName, int strength, int semester, int departmentId, int academicYearId, int? roomId = null)
     {
         Id = id;
@@ -19,14 +25,20 @@ public class ClassBatch
         RoomId = roomId;
     }
 
-    public int Id { get; private set; }
-    public string BatchName { get; private set; }
-    public int Strength { get; private set; }
-    public int Semester { get; private set; }
-    public int DepartmentId { get; private set; }
-    public int AcademicYearId { get; private set; }
-    public int? RoomId { get; private set; }
+    public int Id { get; set; }
+    public string BatchName { get; set; }
+    public int Strength { get; set; }
+    public int Semester { get; set; }
+    public int DepartmentId { get; set; }
+    public int AcademicYearId { get; set; }
+    public int? RoomId { get; set; }
     public bool IsActive { get; private set; } = true;
+    
+    // Navigation properties
+    public Department? Department { get; set; }
+    public AcademicYear? AcademicYear { get; set; }
+    public Room? Room { get; set; }
+    public ICollection<TimetableSlot>? TimetableSlots { get; set; }
 
     /// <summary>
     /// Factory method to create a new ClassBatch with business rule validation

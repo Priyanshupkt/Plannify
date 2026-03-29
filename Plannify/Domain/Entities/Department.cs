@@ -9,11 +9,11 @@ namespace Plannify.Domain.Entities;
 public class Department
 {
     // Properties with private setters - only set through Create()
-    public int Id { get; private set; }
-    public string Name { get; private set; } = string.Empty;
-    public string Code { get; private set; } = string.Empty;
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
     public string? ShortName { get; set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
     /// <summary>

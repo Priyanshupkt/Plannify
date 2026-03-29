@@ -7,45 +7,57 @@ namespace Plannify.Domain.Entities;
 /// </summary>
 public class Substitution
 {
+    // Parameterless constructor for EF Core
+    public Substitution()
+    {
+        Reason = string.Empty;
+        ApprovedBy = string.Empty;
+    }
+
     /// <summary>
     /// Unique identifier for the substitution record
     /// </summary>
-    public int Id { get; private set; }
+    public int Id { get; set; }
 
     /// <summary>
     /// Foreign key to the timetable slot being substituted
     /// </summary>
-    public int TimetableSlotId { get; private set; }
+    public int TimetableSlotId { get; set; }
 
     /// <summary>
     /// Foreign key to the original teacher (absent)
     /// </summary>
-    public int OriginalTeacherId { get; private set; }
+    public int OriginalTeacherId { get; set; }
 
     /// <summary>
     /// Foreign key to the substitute teacher (available)
     /// </summary>
-    public int SubstituteTeacherId { get; private set; }
+    public int SubstituteTeacherId { get; set; }
 
     /// <summary>
     /// Date of the substitution (when the absence occurs)
     /// </summary>
-    public DateOnly Date { get; private set; }
+    public DateOnly Date { get; set; }
 
     /// <summary>
     /// Reason for the substitution (e.g., "Medical Leave", "Conference", etc.)
     /// </summary>
-    public string Reason { get; private set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
 
     /// <summary>
     /// Identifier of the person who approved the substitution
     /// </summary>
-    public string ApprovedBy { get; private set; } = string.Empty;
+    public string ApprovedBy { get; set; } = string.Empty;
 
     /// <summary>
     /// Timestamp when the substitution was created
     /// </summary>
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation properties
+    public TimetableSlot? TimetableSlot { get; set; }
+    public Teacher? OriginalTeacher { get; set; }
+    public Teacher? SubstituteTeacher { get; set; }
 
     /// <summary>
     /// Factory method to create a new substitution record with validation

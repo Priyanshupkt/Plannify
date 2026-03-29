@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 using Plannify.Services;
 
 namespace Plannify.Pages.Admin.Timetable;
@@ -27,7 +27,7 @@ public class ByTeacherModel : PageModel
     public List<SelectListItem> Teachers { get; set; } = new();
     public List<SelectListItem> Semesters { get; set; } = new();
 
-    public Plannify.Models.Teacher? CurrentTeacher { get; set; }
+    public Teacher? CurrentTeacher { get; set; }
     public Semester? CurrentSemester { get; set; }
     public Dictionary<string, Dictionary<string, TimetableSlot?>> Grid { get; set; } = new();
     public List<string> Days { get; set; } = new();
