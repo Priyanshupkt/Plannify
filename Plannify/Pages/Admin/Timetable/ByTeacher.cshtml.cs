@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
 using Plannify.Models;
 using Plannify.Services;
@@ -12,11 +13,15 @@ public class ByTeacherModel : PageModel
 {
     private readonly AppDbContext _context;
     private readonly PdfExportService _pdfService;
+    private readonly ITeacherService _teacherService;
+    private readonly ISemesterService _semesterService;
 
-    public ByTeacherModel(AppDbContext context, PdfExportService pdfService)
+    public ByTeacherModel(AppDbContext context, PdfExportService pdfService, ITeacherService teacherService, ISemesterService semesterService)
     {
         _context = context;
         _pdfService = pdfService;
+        _teacherService = teacherService;
+        _semesterService = semesterService;
     }
 
     public List<SelectListItem> Teachers { get; set; } = new();

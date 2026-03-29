@@ -13,11 +13,13 @@ public class ConflictsModel : PageModel
 {
     private readonly AppDbContext _context;
     private readonly IConflictDetectorService _conflictDetector;
+    private readonly ISemesterService _semesterService;
 
-    public ConflictsModel(AppDbContext context, IConflictDetectorService conflictDetector)
+    public ConflictsModel(AppDbContext context, IConflictDetectorService conflictDetector, ISemesterService semesterService)
     {
         _context = context;
         _conflictDetector = conflictDetector;
+        _semesterService = semesterService;
     }
 
     public List<SelectListItem> Semesters { get; set; } = new();

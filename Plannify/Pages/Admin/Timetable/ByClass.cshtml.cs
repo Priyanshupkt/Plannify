@@ -3,21 +3,27 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
 using Plannify.Models;
 using Plannify.Services;
 
 namespace Plannify.Pages.Admin.Timetable;
 
+[Authorize]
 public class ByClassModel : PageModel
 {
     private readonly AppDbContext _context;
     private readonly PdfExportService _pdfService;
+    private readonly IClassBatchService _classBatchService;
+    private readonly ISemesterService _semesterService;
 
-    public ByClassModel(AppDbContext context, PdfExportService pdfService)
+    public ByClassModel(AppDbContext context, PdfExportService pdfService, IClassBatchService classBatchService, ISemesterService semesterService)
     {
         _context = context;
         _pdfService = pdfService;
+        _classBatchService = classBatchService;
+        _semesterService = semesterService;
     }
 
     public List<SelectListItem> ClassBatches { get; set; } = new();

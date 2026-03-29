@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
 using Plannify.Models;
 
@@ -8,6 +9,8 @@ namespace Plannify.Pages.Admin.Timetable;
 public class MasterTimetableModel : PageModel
 {
     private readonly AppDbContext _context;
+    private readonly ITimetableService _timetableService;
+    private readonly ISemesterService _semesterService;
 
     public List<ClassTimetableView> ClassTimetables { get; set; } = new();
     public List<TeacherTimetableView> TeacherTimetables { get; set; } = new();
@@ -19,9 +22,11 @@ public class MasterTimetableModel : PageModel
     public int TotalRooms { get; set; }
     public int UtilizedRooms { get; set; }
 
-    public MasterTimetableModel(AppDbContext context)
+    public MasterTimetableModel(AppDbContext context, ITimetableService timetableService, ISemesterService semesterService)
     {
         _context = context;
+        _timetableService = timetableService;
+        _semesterService = semesterService;
     }
 
     public async Task OnGetAsync()
