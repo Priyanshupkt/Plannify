@@ -1,27 +1,23 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
 using Plannify.Models;
 using Plannify.Services;
-using System.Text.Json;
 
 namespace Plannify.Pages.Admin.Timetable;
 
-[Authorize(Roles = "Admin,HOD")]
 public class ConflictsModel : PageModel
 {
     private readonly AppDbContext _context;
-    private readonly ConflictDetector _conflictDetector;
-    private readonly TimetableExportService _exportService;
+    private readonly IConflictDetectorService _conflictDetector;
 
-    public ConflictsModel(AppDbContext context, ConflictDetector conflictDetector, TimetableExportService exportService)
+    public ConflictsModel(AppDbContext context, IConflictDetectorService conflictDetector)
     {
         _context = context;
         _conflictDetector = conflictDetector;
-        _exportService = exportService;
     }
 
     public List<SelectListItem> Semesters { get; set; } = new();
@@ -30,44 +26,54 @@ public class ConflictsModel : PageModel
     public List<ConflictReport> RoomConflicts { get; set; } = new();
     public List<ConflictReport> ClassConflicts { get; set; } = new();
 
-    public int CurrentSemesterId { get; set; }
+    [BindProperty(SupportsGet = true)]
+    public int ScanSemesterId { get; set; }
+
+    public bool ScanRan { get; set; }
     public DateTime? LastScanTime { get; set; }
 
-    public async Task OnGetAsync(int? semesterId)
+    public async Task OnGetAsync()
     {
         await LoadSemestersAsync();
 
-        if (!semesterId.HasValue)
+        if (ScanSemesterId == 0)
         {
             var activeSemester = await _context.Semesters.FirstOrDefaultAsync(s => s.IsActive);
-            CurrentSemesterId = activeSemester?.Id ?? 0;
-        }
-        else
-        {
-            CurrentSemesterId = semesterId.Value;
+            ScanSemesterId = activeSemester?.Id ?? 0;
         }
 
         if (TempData["LastScanTime"] is string scanTime)
         {
             LastScanTime = DateTime.Parse(scanTime);
+            ScanRan = true;
+        }
+        if (TempData["AllConflicts"] is string conflictsJson)
+        {
+            AllConflicts = System.Text.Json.JsonSerializer.Deserialize<List<ConflictReport>>(conflictsJson) ?? new();
+            TeacherConflicts = AllConflicts.Where(c => c.ConflictType == "Teacher").ToList();
+            RoomConflicts = AllConflicts.Where(c => c.ConflictType == "Room").ToList();
+            ClassConflicts = AllConflicts.Where(c => c.ConflictType == "Class").ToList();
+            ScanRan = true;
         }
     }
 
-    public async Task<IActionResult> OnPostScanAsync(int semesterId)
+    public async Task<IActionResult> OnPostScanAsync()
     {
-        CurrentSemesterId = semesterId;
         await LoadSemestersAsync();
 
-        AllConflicts = await _conflictDetector.GetAllConflictsAsync(semesterId);
+        if (ScanSemesterId == 0)
+            return RedirectToPage();
 
-        TeacherConflicts = AllConflicts.Where(c => c.ConflictType == "TeacherConflict").ToList();
-        RoomConflicts = AllConflicts.Where(c => c.ConflictType == "RoomConflict").ToList();
-        ClassConflicts = AllConflicts.Where(c => c.ConflictType == "ClassConflict").ToList();
+        AllConflicts = await _conflictDetector.GetAllConflictsAsync(ScanSemesterId);
+
+        TeacherConflicts = AllConflicts.Where(c => c.ConflictType == "Teacher").ToList();
+        RoomConflicts = AllConflicts.Where(c => c.ConflictType == "Room").ToList();
+        ClassConflicts = AllConflicts.Where(c => c.ConflictType == "Class").ToList();
 
         TempData["LastScanTime"] = DateTime.Now.ToString("o");
-        LastScanTime = DateTime.Now;
+        TempData["AllConflicts"] = System.Text.Json.JsonSerializer.Serialize(AllConflicts);
 
-        return Page();
+        return RedirectToPage(new { ScanSemesterId });
     }
 
     private async Task LoadSemestersAsync()

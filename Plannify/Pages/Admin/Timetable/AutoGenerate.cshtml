@@ -1,0 +1,278 @@
+@page
+@model Plannify.Pages.Admin.Timetable.AutoGenerateModel
+@{
+    ViewData["Title"] = "Auto-Generate Timetable";
+}
+
+<div class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center gap-3 mb-2">
+            <span class="material-symbols-outlined text-primary text-3xl">auto_mode</span>
+            <h1 class="text-3xl font-bold text-on-surface">Auto-Generate Timetable</h1>
+        </div>
+        <p class="text-on-surface-variant">Intelligent scheduling algorithm with conflict detection and optimization</p>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="mb-6 p-4 bg-tertiary-fixed/20 border border-tertiary-fixed/50 rounded-xl text-tertiary text-sm">
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined flex-shrink-0 mt-0.5">check_circle</span>
+                <div>
+                    @foreach (var line in Model.SuccessMessage.Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <p>@line</p>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="mb-6 p-4 bg-error-fixed/20 border border-error-fixed/50 rounded-xl text-error text-sm">
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined flex-shrink-0 mt-0.5">error</span>
+                <div>
+                    @foreach (var line in Model.ErrorMessage.Split(new[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <p>@line</p>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Configuration Form -->
+        <div class="lg:col-span-2">
+            <form method="post" class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-8 space-y-6">
+                @Html.AntiForgeryToken()
+
+                <!-- Academic Year Selection -->
+                <div>
+                    <label for="SelectedAcademicYearId" class="block text-sm font-medium text-on-surface mb-2">
+                        <span class="material-symbols-outlined inline text-base align-text-bottom mr-1">date_range</span>
+                        Academic Year <span class="text-error">*</span>
+                    </label>
+                    <select asp-for="SelectedAcademicYearId" asp-items="Model.AcademicYears" 
+                            class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" 
+                            required onchange="document.forms[0].submit();">
+                        <option value="">Select Academic Year</option>
+                    </select>
+                </div>
+
+                <!-- Semester Selection -->
+                <div>
+                    <label for="SelectedSemesterId" class="block text-sm font-medium text-on-surface mb-2">
+                        <span class="material-symbols-outlined inline text-base align-text-bottom mr-1">school</span>
+                        Semester <span class="text-error">*</span>
+                    </label>
+                    <select asp-for="SelectedSemesterId" asp-items="Model.Semesters" 
+                            class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" 
+                            required onchange="document.forms[0].submit();">
+                        <option value="">Select Semester</option>
+                    </select>
+                    <p class="text-xs text-on-surface-variant mt-2">Leave empty to generate for all semesters</p>
+                </div>
+
+                <!-- Class Selection -->
+                <div>
+                    <label for="SelectedClassId" class="block text-sm font-medium text-on-surface mb-2">
+                        <span class="material-symbols-outlined inline text-base align-text-bottom mr-1">groups</span>
+                        Class (Optional)
+                    </label>
+                    <select asp-for="SelectedClassId" asp-items="Model.Classes" 
+                            class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none">
+                        <option value="">All Classes in Semester</option>
+                    </select>
+                    <p class="text-xs text-on-surface-variant mt-2">Select a specific class or leave empty for all classes</p>
+                </div>
+
+                <!-- Scheduling Parameters -->
+                <div class="pt-4 border-t border-outline-variant/10">
+                    <h3 class="text-sm font-semibold text-on-surface mb-4">Scheduling Parameters</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="StartHour" class="block text-sm font-medium text-on-surface mb-2">
+                                Start Hour
+                            </label>
+                            <input type="number" asp-for="StartHour" min="6" max="22" 
+                                   class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none">
+                            <p class="text-xs text-on-surface-variant mt-1">e.g., 9 for 9 AM</p>
+                        </div>
+
+                        <div>
+                            <label for="EndHour" class="block text-sm font-medium text-on-surface mb-2">
+                                End Hour
+                            </label>
+                            <input type="number" asp-for="EndHour" min="6" max="22" 
+                                   class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none">
+                            <p class="text-xs text-on-surface-variant mt-1">e.g., 17 for 5 PM</p>
+                        </div>
+
+                        <div>
+                            <label for="SlotDurationMinutes" class="block text-sm font-medium text-on-surface mb-2">
+                                Slot Duration (min)
+                            </label>
+                            <input type="number" asp-for="SlotDurationMinutes" min="30" max="180" step="15" 
+                                   class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none">
+                            <p class="text-xs text-on-surface-variant mt-1">Minutes per slot</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clear Existing Option -->
+                <div class="pt-4">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" asp-for="ClearExisting" 
+                               class="w-4 h-4 rounded bg-surface-container-low border-outline focus:ring-2 focus:ring-primary/30 cursor-pointer">
+                        <span class="text-sm font-medium text-on-surface">Clear existing timetable before generating</span>
+                    </label>
+                    <p class="text-xs text-on-surface-variant mt-1 ml-7">Warning: This will delete all existing slots for the selected semester/class</p>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex gap-3 pt-6">
+                    <button type="submit" class="flex-1 px-6 py-3 bg-primary text-on-primary font-medium rounded-xl hover:shadow-md transition-shadow flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">play_arrow</span>
+                        Generate Timetable
+                    </button>
+                    <a href="/Admin/Timetable/ByClass" class="px-6 py-3 bg-surface-container-low text-on-surface font-medium rounded-xl hover:bg-surface-container transition-colors flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">close</span>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="lg:col-span-1">
+            <!-- Algorithm Info -->
+            <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="material-symbols-outlined text-primary text-xl">info</span>
+                    <h3 class="font-semibold text-on-surface">How It Works</h3>
+                </div>
+                <ul class="space-y-3 text-sm text-on-surface-variant">
+                    <li class="flex gap-3">
+                        <span class="material-symbols-outlined text-sm text-primary flex-shrink-0">check_small</span>
+                        <span>Analyzes all classes and subjects</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="material-symbols-outlined text-sm text-primary flex-shrink-0">check_small</span>
+                        <span>Finds available teachers & rooms</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="material-symbols-outlined text-sm text-primary flex-shrink-0">check_small</span>
+                        <span>Detects scheduling conflicts</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="material-symbols-outlined text-sm text-primary flex-shrink-0">check_small</span>
+                        <span>Optimizes workload distribution</span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="material-symbols-outlined text-sm text-primary flex-shrink-0">check_small</span>
+                        <span>Creates conflict-free schedule</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Constraints Panel -->
+            <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="material-symbols-outlined text-secondary text-xl">verified_user</span>
+                    <h3 class="font-semibold text-on-surface">Constraints</h3>
+                </div>
+                <div class="space-y-3 text-sm text-on-surface-variant">
+                    <div class="pb-3 border-b border-outline-variant/10">
+                        <p class="font-medium text-on-surface mb-1">Hard Constraints (Required)</p>
+                        <ul class="space-y-1 text-xs">
+                            <li>• No teacher double-booking</li>
+                            <li>• No room double-booking</li>
+                            <li>• No class overlap</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="font-medium text-on-surface mb-1">Soft Constraints (Optimized)</p>
+                        <ul class="space-y-1 text-xs">
+                            <li>• Balance teacher workload</li>
+                            <li>• Room capacity >= class size</li>
+                            <li>• Minimize gaps in schedule</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="mt-6 pt-6 border-t border-outline-variant/10">
+                <p class="text-xs font-semibold text-on-surface-variant mb-3">After Generation</p>
+                <div class="space-y-2">
+                    <a href="/Admin/Timetable/ByClass" class="block px-4 py-2 bg-primary-fixed text-on-primary-fixed rounded-lg hover:bg-primary-fixed/90 transition-colors text-center text-sm font-medium">
+                        View by Class
+                    </a>
+                    <a href="/Admin/Timetable/ByTeacher" class="block px-4 py-2 bg-secondary-fixed text-on-secondary-fixed rounded-lg hover:bg-secondary-fixed/90 transition-colors text-center text-sm font-medium">
+                        View by Teacher
+                    </a>
+                    <a href="/Admin/Timetable/Conflicts" class="block px-4 py-2 bg-tertiary-fixed text-on-tertiary-fixed rounded-lg hover:bg-tertiary-fixed/90 transition-colors text-center text-sm font-medium">
+                        Check Conflicts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generation Results -->
+    @if (Model.Result != null)
+    {
+        <div class="mt-8 bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-8">
+            <h3 class="text-lg font-semibold text-on-surface mb-4">Generation Report</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="p-4 bg-surface-container-low rounded-xl">
+                    <p class="text-sm text-on-surface-variant mb-1">Slots Generated</p>
+                    <p class="text-2xl font-bold text-primary">@Model.Result.SlotsGenerated</p>
+                </div>
+                <div class="p-4 bg-surface-container-low rounded-xl">
+                    <p class="text-sm text-on-surface-variant mb-1">Hard Conflicts</p>
+                    <p class="text-2xl font-bold @(Model.Result.ConflictsDetected > 0 ? "text-error" : "text-tertiary")">
+                        @Model.Result.ConflictsDetected
+                    </p>
+                </div>
+                <div class="p-4 bg-surface-container-low rounded-xl">
+                    <p class="text-sm text-on-surface-variant mb-1">Soft Violations</p>
+                    <p class="text-2xl font-bold text-secondary">
+                        @Model.Result.Violations.Count(v => v.Type == "SoftConstraint")
+                    </p>
+                </div>
+            </div>
+
+            @if (Model.Result.Violations.Any())
+            {
+                <div class="space-y-3">
+                    <h4 class="font-medium text-on-surface">Issues Found</h4>
+                    @foreach (var violation in Model.Result.Violations)
+                    {
+                        <div class="p-3 bg-@(violation.Type == "HardConstraint" ? "error" : "secondary")-fixed/10 border border-@(violation.Type == "HardConstraint" ? "error" : "secondary")-fixed/30 rounded-lg text-sm">
+                            <div class="flex gap-2">
+                                <span class="material-symbols-outlined text-@(violation.Type == "HardConstraint" ? "error" : "secondary") flex-shrink-0 text-lg">
+                                    @(violation.Type == "HardConstraint" ? "error" : "warning")
+                                </span>
+                                <div>
+                                    <p class="font-medium text-on-surface">@violation.Description</p>
+                                    @if (!string.IsNullOrEmpty(violation.Details))
+                                    {
+                                        <p class="text-xs text-on-surface-variant mt-1">@violation.Details</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

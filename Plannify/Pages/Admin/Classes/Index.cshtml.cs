@@ -8,7 +8,6 @@ using Plannify.Services;
 
 namespace Plannify.Pages.Admin.Classes;
 
-[Authorize(Roles = "SuperAdmin")]
 public class IndexModel : PageModel
 {
     private readonly AppDbContext _dbContext;

@@ -1,49 +1,19 @@
-﻿// Confirm dialog wrapper
-function confirmAction(message) {
-    return confirm(message);
-}
-
-// Auto-dismiss flash alerts
+﻿// Auto-dismiss flash alerts after 4 seconds
 document.addEventListener('DOMContentLoaded', function () {
-    const alerts = document.querySelectorAll('.alert-dismissible');
-    alerts.forEach(alert => {
+    document.querySelectorAll('.flash-alert').forEach(function (el) {
         setTimeout(function () {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
+            el.style.opacity = '0';
+            setTimeout(function () { el.remove(); }, 500);
         }, 4000);
     });
 });
 
-// Initialize Select2 on all .select2 elements
-document.addEventListener('DOMContentLoaded', function () {
-    if (typeof $ !== 'undefined' && typeof $.fn.select2 !== 'undefined') {
-        $('.select2').select2({
-            placeholder: 'Select an option',
-            allowClear: true,
-            theme: 'bootstrap-5'
-        });
-    }
-});
-
-// Utility to get CSRF token for AJAX requests
-function getCsrfToken() {
-    return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+// Delete modal helpers
+function showDeleteModal(entityName, formId) {
+    document.getElementById('deleteModalEntityName').textContent = entityName;
+    document.getElementById('deleteModalForm').id = formId;
+    document.getElementById('deleteModal').classList.remove('hidden');
 }
-
-// Utility to enable/disable form on demand
-function toggleFormDisabled(formId, disabled) {
-    const form = document.getElementById(formId);
-    if (form) {
-        const inputs = form.querySelectorAll('input, select, textarea, button');
-        inputs.forEach(input => {
-            if (input.type !== 'submit' || input.name !== 'submit') {
-                input.disabled = disabled;
-            }
-        });
-    }
-}
-
-// Log activity (for debugging/audit)
-function logActivity(action, details) {
-    console.log(`[${new Date().toISOString()}] ${action}:`, details);
+function hideDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
 }

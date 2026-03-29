@@ -8,7 +8,6 @@ using Plannify.Services;
 
 namespace Plannify.Pages.Admin.Teachers;
 
-[Authorize(Roles = "SuperAdmin")]
 public class ProfileModel : PageModel
 {
     private readonly AppDbContext _dbContext;
@@ -76,43 +75,5 @@ public class ProfileModel : PageModel
         }
 
         return Page();
-    }
-
-    public async Task<IActionResult> OnPostCreateAccountAsync(int id)
-    {
-        var teacher = await _dbContext.Teachers.FindAsync(id);
-        if (teacher == null)
-        {
-            TempData["Error"] = "Teacher not found.";
-            return RedirectToPage();
-        }
-
-        var userExists = await _dbContext.Users.AnyAsync(u => u.Email == teacher.Email);
-        if (userExists)
-        {
-            TempData["Error"] = "User account for this email already exists.";
-            return RedirectToPage(new { id });
-        }
-
-        var newUser = new ApplicationUser
-        {
-            UserName = teacher.Email,
-            Email = teacher.Email,
-            FullName = teacher.FullName,
-            Role = "Teacher",
-            DepartmentId = teacher.DepartmentId,
-            TeacherId = teacher.Id,
-            IsActive = true,
-            EmailConfirmed = true
-        };
-
-        var result = await _dbContext.Users.AddAsync(newUser);
-        await _dbContext.SaveChangesAsync();
-
-        await _auditService.LogAsync("CREATE", "ApplicationUser", newUser.Id, 
-            null, $"Username: {newUser.Email}, Role: Teacher, Linked to: {teacher.FullName}");
-
-        TempData["Success"] = $"User account created for {teacher.FullName}. Email: {teacher.Email}";
-        return RedirectToPage(new { id });
     }
 }

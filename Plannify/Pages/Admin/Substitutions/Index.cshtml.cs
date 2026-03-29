@@ -10,7 +10,6 @@ using System.Text.Json;
 
 namespace Plannify.Pages.Admin.Substitutions;
 
-[Authorize(Roles = "Admin,HOD")]
 public class IndexModel : PageModel
 {
     private readonly AppDbContext _context;
@@ -110,7 +109,7 @@ public class IndexModel : PageModel
         return new JsonResult(availableTeachers);
     }
 
-    public async Task<IActionResult> OnPostAssignAsync()
+    public async Task<IActionResult> OnPostAddAsync()
     {
         if (!ModelState.IsValid)
         {
@@ -164,7 +163,7 @@ public class IndexModel : PageModel
             SubstituteTeacherId = Input.SubstituteTeacherId,
             Date = Input.Date,
             Reason = Input.Reason,
-            ApprovedBy = User.Identity?.Name ?? "System"
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.SubstitutionRecords.Add(substitution);
@@ -184,7 +183,7 @@ public class IndexModel : PageModel
                 substitution.Reason
             }));
 
-        TempData["Success"] = "Substitution assigned successfully.";
+        TempData["Success"] = "Substitution recorded.";
         return RedirectToPage();
     }
 

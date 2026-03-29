@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Plannify App",
+			"type": "shell",
+			"command": "cd /home/cy3pher/Documents/WorkSpace-Dev/Plannify/Plannify && dotnet run --configuration Debug",
+			"isBackground": true
+		}
+	]
+}

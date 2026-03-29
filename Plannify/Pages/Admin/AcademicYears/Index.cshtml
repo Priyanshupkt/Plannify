@@ -2,160 +2,144 @@
 @model Plannify.Pages.Admin.AcademicYears.IndexModel
 @{
     ViewData["Title"] = "Academic Years";
+    ViewData["Section"] = "Master Data";
+    Layout = "/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="card-title mb-0">📅 Academic Years Management</h2>
+<!-- Add Academic Year Form -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 mb-6">
+    <div class="flex items-center gap-3 mb-6">
+        <span class="material-symbols-outlined text-primary">add_circle</span>
+        <h3 class="text-lg font-semibold text-on-surface">Add New Academic Year</h3>
     </div>
+    <form method="post" asp-page-handler="Add">
+        @Html.AntiForgeryToken()
+        <div class="grid grid-cols-3 gap-4">
+            <div>
+                <label for="NewYear_Label" class="block text-sm font-medium text-on-surface mb-2">Year Label (e.g., 2025-26)</label>
+                <input type="text" class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" id="NewYear_Label" asp-for="NewAcademicYear.YearLabel" placeholder="2025-26" required>
+                <span asp-validation-for="NewAcademicYear.YearLabel" class="text-error text-xs mt-1 block"></span>
+            </div>
+            <div>
+                <label for="NewYear_Start" class="block text-sm font-medium text-on-surface mb-2">Start Date</label>
+                <input type="date" class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" id="NewYear_Start" asp-for="NewAcademicYear.StartDate" required>
+                <span asp-validation-for="NewAcademicYear.StartDate" class="text-error text-xs mt-1 block"></span>
+            </div>
+            <div>
+                <label for="NewYear_End" class="block text-sm font-medium text-on-surface mb-2">End Date</label>
+                <input type="date" class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" id="NewYear_End" asp-for="NewAcademicYear.EndDate" required>
+                <span asp-validation-for="NewAcademicYear.EndDate" class="text-error text-xs mt-1 block"></span>
+            </div>
+        </div>
+        <div class="flex justify-end mt-4">
+            <button type="submit" class="px-6 py-3 bg-primary text-on-primary font-medium rounded-xl hover:shadow-md transition-shadow">Add Academic Year</button>
+        </div>
+    </form>
+</div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Add New Academic Year</h5>
-        </div>
-        <div class="card-body">
-            <form method="post" asp-page-handler="Add">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label asp-for="NewAcademicYear.YearLabel" class="form-label">Year Label (e.g., 2025-26)</label>
-                        <input type="text" asp-for="NewAcademicYear.YearLabel" class="form-control" placeholder="2025-26" required />
-                        <span asp-validation-for="NewAcademicYear.YearLabel" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="NewAcademicYear.StartDate" class="form-label">Start Date</label>
-                        <input type="date" asp-for="NewAcademicYear.StartDate" class="form-control" required />
-                        <span asp-validation-for="NewAcademicYear.StartDate" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="NewAcademicYear.EndDate" class="form-label">End Date</label>
-                        <input type="date" asp-for="NewAcademicYear.EndDate" class="form-control" required />
-                        <span asp-validation-for="NewAcademicYear.EndDate" class="text-danger"></span>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Add Academic Year
-                    </button>
-                </div>
-            </form>
-        </div>
+<!-- Academic Years Table -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border overflow-hidden">
+    <div class="flex items-center gap-3 px-8 py-4 bg-surface-container-low/50 border-b border-outline-variant/10">
+        <span class="material-symbols-outlined text-primary">calendar_month</span>
+        <h3 class="text-lg font-semibold text-on-surface">Academic Years List</h3>
+        <div class="ml-auto text-slate-500 text-sm">@Model.AcademicYears.Count record(s)</div>
     </div>
-
-    <div class="card">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Academic Years List</h5>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width: 5%">#</th>
-                        <th>Year Label</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Status</th>
-                        <th>Semesters</th>
-                        <th style="width: 15%">Actions</th>
+    
+    @if (Model.AcademicYears.Count > 0)
+    {
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-surface-container-low/50 border-b border-outline-variant/10">
+                        <th class="px-8 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">#</th>
+                        <th class="px-8 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Year Label</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Start Date</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">End Date</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Status</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Semesters</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model.AcademicYears.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
-                                No academic years found. Create one to get started.
-                            </td>
-                        </tr>
-                    }
-                    @foreach (var year in Model.AcademicYears)
-                    {
-                        <tr>
-                            <td><strong>@Model.AcademicYears.IndexOf(year) + 1</strong></td>
-                            <td>@year.YearLabel</td>
-                            <td>@year.StartDate.ToString("dd MMM yyyy")</td>
-                            <td>@year.EndDate.ToString("dd MMM yyyy")</td>
-                            <td>
-                                @if (year.IsActive)
-                                {
-                                    <span class="badge bg-success">✓ Active</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary">Inactive</span>
-                                }
-                            </td>
-                            <td>
-                                <span class="badge bg-info">@(Model.SemesterCounts.ContainsKey(year.Id) ? Model.SemesterCounts[year.Id] : 0)</span>
-                            </td>
-                            <td>
-                                @if (!year.IsActive)
-                                {
-                                    <form method="post" asp-page-handler="SetActive" asp-route-id="@year.Id" style="display: inline;">
-                                        <button type="submit" class="btn btn-sm btn-success" title="Set as Active">
-                                            <i class="bi bi-check-circle"></i> Activate
+                    @{
+                        int index = 1;
+                        foreach (var year in Model.AcademicYears)
+                        {
+                            <tr class="hover:bg-surface-container-low/30 transition-colors group border-t border-outline-variant/10">
+                                <td class="px-8 py-5 text-sm text-on-surface">@(index++)</td>
+                                <td class="px-8 py-5 text-sm font-medium text-on-surface">@year.YearLabel</td>
+                                <td class="px-4 py-5 text-sm text-on-surface">@year.StartDate.ToString("dd MMM yyyy")</td>
+                                <td class="px-4 py-5 text-sm text-on-surface">@year.EndDate.ToString("dd MMM yyyy")</td>
+                                <td class="px-4 py-5">
+                                    @if (year.IsActive)
+                                    {
+                                        <span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed font-bold text-xs rounded-full">✓ Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="px-3 py-1 bg-on-surface-variant/10 text-on-surface-variant font-bold text-xs rounded-full">Inactive</span>
+                                    }
+                                </td>
+                                <td class="px-4 py-5 text-xs"><span class="px-3 py-1 bg-secondary-fixed text-on-secondary-fixed font-bold rounded-full">@(Model.SemesterCounts.ContainsKey(year.Id) ? Model.SemesterCounts[year.Id] : 0)</span></td>
+                                <td class="px-4 py-5">
+                                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        @if (!year.IsActive)
+                                        {
+                                            <form method="post" asp-page-handler="SetActive" asp-route-id="@year.Id" style="display: inline;">
+                                                <button type="submit" class="p-2 rounded-lg hover:bg-tertiary/10 text-tertiary transition-colors" title="Set as Active">
+                                                    <span class="material-symbols-outlined text-lg">check_circle</span>
+                                                </button>
+                                            </form>
+                                        }
+                                        <a href="/Admin/AcademicYears/Semesters?yearId=@year.Id" class="p-2 rounded-lg hover:bg-primary/10 text-primary transition-colors" title="Manage Semesters">
+                                            <span class="material-symbols-outlined text-lg">settings</span>
+                                        </a>
+                                        <button type="button" class="p-2 rounded-lg hover:bg-error/10 text-error transition-colors" 
+                                                onclick="showDeleteModal('@year.Id', '@year.YearLabel')">
+                                            <span class="material-symbols-outlined text-lg">delete</span>
                                         </button>
-                                    </form>
-                                }
-                                <a href="/Admin/AcademicYears/Semesters?yearId=@year.Id" class="btn btn-sm btn-info" title="Manage Semesters">
-                                    <i class="bi bi-gear"></i> Semesters
-                                </a>
-                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
-                                        onclick="setDeleteData(@year.Id, '@year.YearLabel')" title="Delete Academic Year">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
         </div>
-    </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteModalLabel">Delete Academic Year</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete academic year <strong id="deleteYearLabel"></strong>?</p>
-                <p class="text-muted small">This action cannot be undone.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form method="post" asp-page-handler="Delete" style="display: inline;">
-                    <input type="hidden" id="deleteYearId" name="id" />
-                    <button type="submit" class="btn btn-danger">Delete</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function setDeleteData(id, yearLabel) {
-        document.getElementById('deleteYearId').value = id;
-        document.getElementById('deleteYearLabel').textContent = yearLabel;
     }
-</script>
+    else
+    {
+        <div class="flex flex-col items-center justify-center py-12 px-8">
+            <span class="material-symbols-outlined text-4xl text-on-surface-variant/50 mb-3">inbox</span>
+            <p class="text-on-surface-variant text-center">No academic years found. Create one to get started.</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function showDeleteModal(id, yearLabel) {
+            const confirmed = confirm(`Delete academic year "${yearLabel}"? This cannot be undone.`);
+            if (confirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = location.pathname + '?handler=Delete';
+                
+                let tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                form.appendChild(tokenInput);
+                
+                let idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                idInput.value = id;
+                form.appendChild(idInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+}

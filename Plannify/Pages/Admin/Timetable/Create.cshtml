@@ -2,187 +2,197 @@
 @model Plannify.Pages.Admin.Timetable.CreateModel
 @{
     ViewData["Title"] = "Create Timetable Slot";
+    Layout = "/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid mt-4">
-    <h2 class="mb-4">Create Timetable Slot</h2>
-
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["Conflicts"] != null)
-    {
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <h6>⚠ Scheduling Conflicts Detected:</h6>
-            @{
-                var conflictsList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(TempData["Conflicts"].ToString());
-                foreach (var conflict in conflictsList ?? new())
-                {
-                    <div>• @conflict</div>
-                }
-            }
-            <small class="text-muted mt-2 d-block">Check "I understand the conflict" and submit again to save anyway.</small>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    <div class="row">
-        <!-- LEFT PANEL: Slot Entry Form -->
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-body">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Grid Layout: 2 Columns -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- LEFT PANEL: Slot Entry Form (1 col) -->
+        <div class="lg:col-span-1">
+            <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
+                <div class="p-6">
                     <form method="post" asp-page-handler="Add">
                         @Html.AntiForgeryToken()
 
                         <!-- Section 1: Context -->
-                        <div class="mb-4">
-                            <h6 class="card-subtitle mb-3">Context</h6>
+                        <div class="mb-6">
+                            <h6 class="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">calendar_month</span>
+                                Context
+                            </h6>
                             
-                            <div class="mb-3">
-                                <label for="semesterId" class="form-label">Semester</label>
-                                <select class="form-select" id="semesterId" asp-for="Input.SemesterId" asp-items="Model.Semesters" required>
+                            <div class="mb-4">
+                                <label for="semesterId" class="block text-xs font-bold text-on-surface-variant mb-2">Semester</label>
+                                <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="semesterId" asp-for="Input.SemesterId" asp-items="Model.Semesters" required>
                                     <option value="">-- Select Semester --</option>
                                 </select>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="classBatchId" class="form-label">Class Batch</label>
-                                <select class="form-select" id="classBatchId" asp-for="Input.ClassBatchId" asp-items="Model.ClassBatches" required onchange="loadClassGrid()">
+                            <div class="mb-4">
+                                <label for="classBatchId" class="block text-xs font-bold text-on-surface-variant mb-2">Class Batch</label>
+                                <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="classBatchId" asp-for="Input.ClassBatchId" asp-items="Model.ClassBatches" required onchange="loadClassGrid()">
                                     <option value="">-- Select Class --</option>
                                 </select>
-                                <small class="text-muted">Searchable with Select2</small>
                             </div>
                         </div>
 
                         <!-- Section 2: Slot Details -->
-                        <div class="mb-4">
-                            <h6 class="card-subtitle mb-3">Slot Details</h6>
+                        <div class="mb-6 pb-6 border-b border-outline-variant/20">
+                            <h6 class="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">schedule</span>
+                                Slot Details
+                            </h6>
 
-                            <div class="mb-3">
-                                <label for="day" class="form-label">Day</label>
-                                <select class="form-select" id="day" asp-for="Input.Day" asp-items="Model.Days" required>
+                            <div class="mb-4">
+                                <label for="day" class="block text-xs font-bold text-on-surface-variant mb-2">Day</label>
+                                <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="day" asp-for="Input.Day" asp-items="Model.Days" required>
                                     <option value="">-- Select Day --</option>
                                 </select>
                             </div>
 
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="mb-3">
-                                        <label for="startTime" class="form-label">Start Time</label>
-                                        <input type="time" class="form-control" id="startTime" asp-for="Input.StartTime" required>
-                                    </div>
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div>
+                                    <label for="startTime" class="block text-xs font-bold text-on-surface-variant mb-2">Start Time</label>
+                                    <input type="time" class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="startTime" asp-for="Input.StartTime" required>
                                 </div>
-                                <div class="col-6">
-                                    <div class="mb-3">
-                                        <label for="endTime" class="form-label">End Time</label>
-                                        <input type="time" class="form-control" id="endTime" asp-for="Input.EndTime" required onblur="checkConflicts()">
-                                    </div>
+                                <div>
+                                    <label for="endTime" class="block text-xs font-bold text-on-surface-variant mb-2">End Time</label>
+                                    <input type="time" class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="endTime" asp-for="Input.EndTime" required onblur="checkConflicts()">
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label d-block">Slot Type</label>
-                                <div class="btn-group w-100" role="group">
-                                    <input type="radio" class="btn-check" id="slotTheory" name="Input.SlotType" value="Theory" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()" checked>
-                                    <label class="btn btn-outline-primary" for="slotTheory">Theory</label>
+                            <!-- Conflict Status Indicator -->
+                            <div id="conflictStatus" class="hidden mb-4 p-3 rounded-lg text-sm flex items-center gap-2">
+                                <!-- Dynamically populated by JavaScript -->
+                            </div>
 
-                                    <input type="radio" class="btn-check" id="slotLab" name="Input.SlotType" value="Lab" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()">
-                                    <label class="btn btn-outline-primary" for="slotLab">Lab</label>
-
-                                    <input type="radio" class="btn-check" id="slotGap" name="Input.SlotType" value="GAP" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()">
-                                    <label class="btn btn-outline-primary" for="slotGap">GAP</label>
-
-                                    <input type="radio" class="btn-check" id="slotElective" name="Input.SlotType" value="Elective" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()">
-                                    <label class="btn btn-outline-primary" for="slotElective">Elective</label>
+                            <!-- Suggested Times Section (appears only when conflict detected) -->
+                            <div id="suggestionsContainer" class="hidden mb-6 pb-4 bg-info-container/20 border border-info/30 rounded-xl p-4">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <span class="material-symbols-outlined text-info text-base">lightbulb</span>
+                                    <h6 class="text-sm font-bold text-on-surface">Suggested Available Times</h6>
                                 </div>
+                                <div id="suggestionsList" class="space-y-2">
+                                    <!-- Dynamically populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Slot Type Radio Buttons -->
+                            <label class="block text-xs font-bold text-on-surface-variant mb-3">Slot Type</label>
+                            <div class="grid grid-cols-2 gap-2 mb-4">
+                                <label class="relative flex items-center">
+                                    <input type="radio" name="Input.SlotType" value="Theory" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()" checked class="sr-only peer" id="slotTheory">
+                                    <span class="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/20 rounded-lg text-xs font-bold text-on-surface-variant cursor-pointer peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-all">Theory</span>
+                                </label>
+                                <label class="relative flex items-center">
+                                    <input type="radio" name="Input.SlotType" value="Lab" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()" class="sr-only peer" id="slotLab">
+                                    <span class="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/20 rounded-lg text-xs font-bold text-on-surface-variant cursor-pointer peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-all">Lab</span>
+                                </label>
+                                <label class="relative flex items-center">
+                                    <input type="radio" name="Input.SlotType" value="GAP" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()" class="sr-only peer" id="slotGap">
+                                    <span class="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/20 rounded-lg text-xs font-bold text-on-surface-variant cursor-pointer peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-all">GAP</span>
+                                </label>
+                                <label class="relative flex items-center">
+                                    <input type="radio" name="Input.SlotType" value="Elective" asp-for="Input.SlotType" onchange="updateSlotTypeVisibility()" class="sr-only peer" id="slotElective">
+                                    <span class="w-full px-3 py-2 bg-surface-container-low border border-outline-variant/20 rounded-lg text-xs font-bold text-on-surface-variant cursor-pointer peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-all">Elective</span>
+                                </label>
                             </div>
                         </div>
 
                         <!-- Section 3: Assignment (Hidden if GAP) -->
-                        <div class="mb-4" id="assignmentSection">
-                            <h6 class="card-subtitle mb-3">Assignment</h6>
+                        <div class="mb-6 pb-6 border-b border-outline-variant/20" id="assignmentSection">
+                            <h6 class="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">person</span>
+                                Assignment
+                            </h6>
 
-                            <div class="mb-3">
-                                <label for="teacherId" class="form-label">Teacher</label>
-                                <select class="form-select" id="teacherId" asp-for="Input.TeacherId" asp-items="Model.Teachers">
+                            <div class="mb-4">
+                                <label for="teacherId" class="block text-xs font-bold text-on-surface-variant mb-2">Teacher</label>
+                                <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="teacherId" asp-for="Input.TeacherId" asp-items="Model.Teachers">
                                     <option value="">-- Select Teacher --</option>
                                 </select>
-                                <small class="text-muted d-block" id="teacherHours"></small>
+                                <small class="text-xs text-on-surface-variant mt-1 block" id="teacherHours"></small>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="subjectId" class="form-label">Subject</label>
-                                <select class="form-select" id="subjectId" asp-for="Input.SubjectId" asp-items="Model.Subjects">
+                            <div class="mb-4">
+                                <label for="subjectId" class="block text-xs font-bold text-on-surface-variant mb-2">Subject</label>
+                                <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="subjectId" asp-for="Input.SubjectId" asp-items="Model.Subjects">
                                     <option value="">-- Select Subject --</option>
                                 </select>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="roomId" class="form-label">Room</label>
-                                <select class="form-select" id="roomId" asp-for="Input.RoomId" asp-items="Model.Rooms">
+                            <div class="mb-4">
+                                <label for="roomId" class="block text-xs font-bold text-on-surface-variant mb-2">Room</label>
+                                <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="roomId" asp-for="Input.RoomId" asp-items="Model.Rooms">
                                     <option value="">-- Select Room --</option>
                                 </select>
-                                <div class="mt-2">
-                                    <span id="roomAvailability" class="badge bg-success">Available</span>
+                                <div class="mt-3">
+                                    <span id="roomAvailability" class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-200">Available</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Section 4: Lab Session (Show only if SlotType = Lab) -->
-                        <div class="mb-4" id="labSection" style="display: none;">
-                            <h6 class="card-subtitle mb-3">Lab Session</h6>
+                        <!-- Section 4: Lab Session -->
+                        <div class="mb-6 pb-6 border-b border-outline-variant/20" id="labSection" style="display: none;">
+                            <h6 class="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">science</span>
+                                Lab Session
+                            </h6>
 
-                            <div class="form-check mb-3">
-                                <input type="checkbox" class="form-check-input" id="isMultiPeriodLab" asp-for="Input.IsMultiPeriodLab" onchange="updateLabTagVisibility()">
-                                <label class="form-check-label" for="isMultiPeriodLab">
-                                    Is Multi-Period Lab
-                                </label>
-                            </div>
+                            <label class="flex items-center mb-4">
+                                <input type="checkbox" class="w-4 h-4 rounded border-outline-variant bg-surface-container-low" id="isMultiPeriodLab" asp-for="Input.IsMultiPeriodLab" onchange="updateLabTagVisibility()">
+                                <span class="ml-3 text-xs font-bold text-on-surface">Is Multi-Period Lab</span>
+                            </label>
 
-                            <div class="mb-3" id="labTagSection" style="display: none;">
-                                <label for="labGroupTag" class="form-label">Lab Group Tag</label>
-                                <input type="text" class="form-control" id="labGroupTag" asp-for="Input.LabGroupTag" placeholder="e.g., Lab-Group-A">
+                            <div id="labTagSection" style="display: none;" class="mb-4">
+                                <label for="labGroupTag" class="block text-xs font-bold text-on-surface-variant mb-2">Lab Group Tag</label>
+                                <input type="text" class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="labGroupTag" asp-for="Input.LabGroupTag" placeholder="e.g., Lab-Group-A">
                             </div>
                         </div>
 
                         <!-- Conflict Warning Area -->
-                        <div class="mb-4" id="conflictWarningArea" style="display: none;">
-                            <div class="alert alert-warning">
-                                <h6 class="alert-heading">⚠ Conflicts Detected</h6>
-                                <ul id="conflictsList" class="mb-3 small"></ul>
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="ignoreConflicts" asp-for="Input.IgnoreConflicts">
-                                    <label class="form-check-label" for="ignoreConflicts">
-                                        I understand the conflict, save anyway
-                                    </label>
-                                </div>
+                        <div class="mb-6" id="conflictWarningArea" style="display: none;">
+                            <div class="bg-warning/10 border border-warning/30 rounded-2xl p-4">
+                                <h6 class="text-sm font-bold text-warning mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-base">warning</span>
+                                    Conflicts Detected
+                                </h6>
+                                <ul id="conflictsList" class="mb-3 space-y-1 text-xs text-on-surface"></ul>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="w-4 h-4 rounded border-outline-variant bg-surface-container-low" id="ignoreConflicts" asp-for="Input.IgnoreConflicts">
+                                    <span class="ml-3 text-xs font-bold text-on-surface">I understand the conflict, save anyway</span>
+                                </label>
                             </div>
                         </div>
 
                         <!-- Submit/Clear Buttons -->
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">Add Slot</button>
-                            <button type="reset" class="btn btn-secondary">Clear Form</button>
+                        <div class="space-y-2">
+                            <button type="submit" class="w-full bg-primary hover:bg-primary-container text-on-primary px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">
+                                <span class="material-symbols-outlined inline mr-2 -mt-1">add_circle</span>
+                                Add Slot
+                            </button>
+                            <button type="reset" class="w-full bg-surface-container-high hover:bg-surface-container-high/80 text-on-surface px-6 py-3 rounded-xl font-bold transition-all">
+                                Clear Form
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT PANEL: Class Grid Preview -->
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Class Timetable Preview</h6>
+        <!-- RIGHT PANEL: Class Grid Preview (2 cols) -->
+        <div class="lg:col-span-2">
+            <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
+                <div class="px-6 py-4 border-b border-outline-variant/20 bg-surface-container-low/50">
+                    <h6 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-base">grid_view</span>
+                        Class Timetable Preview
+                    </h6>
                 </div>
-                <div class="card-body">
+                <div class="p-6">
                     <div id="gridPreview">
-                        <p class="text-muted">Select a class to view the timetable.</p>
+                        <p class="text-sm text-on-surface-variant">Select a class and semester to view the timetable.</p>
                     </div>
                 </div>
             </div>
@@ -289,6 +299,90 @@
                     }
                 })
                 .catch(e => console.error('Error checking conflicts:', e));
+
+            // Also check for suggestions if there are conflicts
+            if (teacherId && classId && day && start && end && semesterId) {
+                checkForSuggestions(semesterId, teacherId, classId, roomId > 0 ? roomId : null, day, start, end);
+            }
+        }
+
+        // Real-time conflict detection and suggestions
+        document.getElementById('teacherId').addEventListener('change', checkConflicts);
+        document.getElementById('day').addEventListener('change', checkConflicts);
+        document.getElementById('startTime').addEventListener('change', checkConflicts);
+        document.getElementById('endTime').addEventListener('change', checkConflicts);
+        document.getElementById('roomId').addEventListener('change', checkConflicts);
+
+        async function checkForSuggestions(semesterId, teacherId, classBatchId, roomId, day, startTime, endTime) {
+            if (!semesterId || !teacherId || !classBatchId || !day || !startTime || !endTime) {
+                hideSuggestions();
+                return;
+            }
+
+            try {
+                const roomParam = roomId ? `&roomId=${roomId}` : '';
+                const response = await fetch(`?handler=Suggestions&semesterId=${semesterId}&teacherId=${teacherId}&classBatchId=${classBatchId}${roomParam}&day=${encodeURIComponent(day)}&startTime=${startTime}&endTime=${endTime}`);
+                const data = await response.json();
+
+                if (data.success && data.suggestions && data.suggestions.length > 0) {
+                    showSuggestions(data.suggestions);
+                } else {
+                    showValidSlot();
+                }
+            } catch (error) {
+                console.error('Error checking suggestions:', error);
+                hideSuggestions();
+            }
+        }
+
+        function showSuggestions(suggestions) {
+            const container = document.getElementById('suggestionsContainer');
+            const list = document.getElementById('suggestionsList');
+            const status = document.getElementById('conflictStatus');
+
+            // Show conflict warning
+            status.classList.remove('hidden');
+            status.className = 'mb-4 p-3 rounded-lg text-sm flex items-center gap-2 bg-error-container text-on-error-container';
+            status.innerHTML = '<span class="material-symbols-outlined">warning</span><span>⚠️ Conflict detected! Try these available times:</span>';
+
+            // Populate suggestions
+            list.innerHTML = suggestions.map(s => `
+                <button type="button" onclick="useSuggestion('${s.day}', '${s.startTime}', '${s.endTime}')" 
+                    class="w-full p-3 text-left rounded-lg bg-info/10 hover:bg-info/20 border border-info/30 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-semibold text-sm text-on-surface">${s.day} ${s.startTime}–${s.endTime}</div>
+                            <div class="text-xs text-on-surface-variant">${s.reason}</div>
+                        </div>
+                        <span class="material-symbols-outlined text-success">check_circle</span>
+                    </div>
+                </button>
+            `).join('');
+
+            container.classList.remove('hidden');
+        }
+
+        function showValidSlot() {
+            const container = document.getElementById('suggestionsContainer');
+            const status = document.getElementById('conflictStatus');
+
+            status.classList.remove('hidden');
+            status.className = 'mb-4 p-3 rounded-lg text-sm flex items-center gap-2 bg-success-container text-on-success-container';
+            status.innerHTML = '<span class="material-symbols-outlined">check_circle</span><span>✓ No conflicts - slot is available!</span>';
+
+            container.classList.add('hidden');
+        }
+
+        function hideSuggestions() {
+            document.getElementById('suggestionsContainer').classList.add('hidden');
+            document.getElementById('conflictStatus').classList.add('hidden');
+        }
+
+        function useSuggestion(day, startTime, endTime) {
+            document.getElementById('day').value = day;
+            document.getElementById('startTime').value = startTime;
+            document.getElementById('endTime').value = endTime;
+            checkConflicts();
         }
 
         document.addEventListener('DOMContentLoaded', () => {

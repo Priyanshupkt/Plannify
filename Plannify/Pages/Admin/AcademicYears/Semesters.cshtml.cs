@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +7,6 @@ using Plannify.Services;
 
 namespace Plannify.Pages.Admin.AcademicYears;
 
-[Authorize(Roles = "SuperAdmin")]
 public class SemestersModel : PageModel
 {
     private readonly AppDbContext _dbContext;

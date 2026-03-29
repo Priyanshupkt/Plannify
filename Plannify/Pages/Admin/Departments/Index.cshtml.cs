@@ -1,42 +1,59 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using Plannify.Data;
-using Plannify.Models;
-using Plannify.Services;
+using Plannify.Application.Contracts;
+using Plannify.Application.DTOs;
 
 namespace Plannify.Pages.Admin.Departments;
 
-[Authorize(Roles = "SuperAdmin")]
+/// <summary>
+/// Refactored Departments page model
+/// ✅ No DbContext injection
+/// ✅ No data access code
+/// ✅ Only presentation concerns
+/// ✅ Delegates to application service
+/// </summary>
+[Authorize]
 public class IndexModel : PageModel
 {
-    private readonly AppDbContext _dbContext;
-    private readonly AuditService _auditService;
+    private readonly IDepartmentService _departmentService;
 
-    public IndexModel(AppDbContext dbContext, AuditService auditService)
-    {
-        _dbContext = dbContext;
-        _auditService = auditService;
-    }
+    // ✅ Only DTOs, no entities
+    public List<DepartmentDto> Departments { get; set; } = new();
 
     [BindProperty]
-    public Department NewDepartment { get; set; } = new();
+    public CreateDepartmentRequest NewDepartment { get; set; } = new();
 
-    public List<Department> Departments { get; set; } = new();
-    public Dictionary<int, int> TeacherCounts { get; set; } = new();
+    [BindProperty]
+    public UpdateDepartmentRequest EditDepartment { get; set; } = new();
 
+    public string? ErrorMessage { get; set; }
+
+    public IndexModel(IDepartmentService departmentService)
+    {
+        _departmentService = departmentService;
+    }
+
+    /// <summary>
+    /// Load all departments
+    /// </summary>
     public async Task OnGetAsync()
     {
-        Departments = await _dbContext.Departments.ToListAsync();
-        
-        foreach (var dept in Departments)
+        var result = await _departmentService.GetAllAsync();
+        if (result.IsSuccess)
         {
-            var count = await _dbContext.Teachers.CountAsync(t => t.DepartmentId == dept.Id);
-            TeacherCounts[dept.Id] = count;
+            Departments = result.Value!.ToList();
+        }
+        else
+        {
+            ErrorMessage = result.ErrorMessage;
+            Departments = new();
         }
     }
 
+    /// <summary>
+    /// Create new department
+    /// </summary>
     public async Task<IActionResult> OnPostAddAsync()
     {
         if (!ModelState.IsValid)
@@ -45,78 +62,57 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        var deptExists = await _dbContext.Departments.AnyAsync(d => d.Code == NewDepartment.Code);
-        if (deptExists)
+        var result = await _departmentService.CreateAsync(NewDepartment);
+
+        if (!result.IsSuccess)
         {
-            TempData["Error"] = $"Department with code '{NewDepartment.Code}' already exists.";
+            TempData["Error"] = result.ErrorMessage;
             await OnGetAsync();
             return Page();
         }
-
-        _dbContext.Departments.Add(NewDepartment);
-        await _dbContext.SaveChangesAsync();
-
-        await _auditService.LogAsync("CREATE", "Department", NewDepartment.Id.ToString(), 
-            null, $"Name: {NewDepartment.Name}, Code: {NewDepartment.Code}");
 
         TempData["Success"] = $"Department '{NewDepartment.Name}' added successfully.";
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostUpdateAsync(int id, string name, string code, string? shortName, string? hodName)
+    /// <summary>
+    /// Update existing department
+    /// </summary>
+    public async Task<IActionResult> OnPostUpdateAsync()
     {
-        var department = await _dbContext.Departments.FindAsync(id);
-        if (department == null)
+        if (!ModelState.IsValid)
         {
-            TempData["Error"] = "Department not found.";
-            return RedirectToPage();
+            await OnGetAsync();
+            return Page();
         }
 
-        var oldValues = $"Name: {department.Name}, Code: {department.Code}";
+        var result = await _departmentService.UpdateAsync(EditDepartment);
 
-        department.Name = name;
-        department.Code = code;
-        department.ShortName = shortName;
-        department.HODName = hodName;
-
-        _dbContext.Departments.Update(department);
-        await _dbContext.SaveChangesAsync();
-
-        var newValues = $"Name: {department.Name}, Code: {department.Code}";
-        await _auditService.LogAsync("UPDATE", "Department", department.Id.ToString(), oldValues, newValues);
+        if (!result.IsSuccess)
+        {
+            TempData["Error"] = result.ErrorMessage;
+            await OnGetAsync();
+            return Page();
+        }
 
         TempData["Success"] = "Department updated successfully.";
         return RedirectToPage();
     }
 
+    /// <summary>
+    /// Delete department
+    /// </summary>
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        var department = await _dbContext.Departments.FindAsync(id);
-        if (department == null)
+        var result = await _departmentService.DeleteAsync(id);
+
+        if (!result.IsSuccess)
         {
-            TempData["Error"] = "Department not found.";
+            TempData["Error"] = result.ErrorMessage;
             return RedirectToPage();
         }
 
-        var teacherCount = await _dbContext.Teachers.CountAsync(t => t.DepartmentId == id);
-        var subjectCount = await _dbContext.Subjects.CountAsync(s => s.DepartmentId == id);
-        var classCount = await _dbContext.ClassBatches.CountAsync(c => c.DepartmentId == id);
-
-        if (teacherCount > 0 || subjectCount > 0 || classCount > 0)
-        {
-            TempData["Error"] = $"Cannot delete department. It has {teacherCount} teachers, {subjectCount} subjects, and {classCount} classes.";
-            await OnGetAsync();
-            return Page();
-        }
-
-        var deptName = department.Name;
-        _dbContext.Departments.Remove(department);
-        await _dbContext.SaveChangesAsync();
-
-        await _auditService.LogAsync("DELETE", "Department", id.ToString(), 
-            $"Name: {deptName}, Code: {department.Code}", null);
-
-        TempData["Success"] = $"Department '{deptName}' deleted successfully.";
+        TempData["Success"] = "Department deleted successfully.";
         return RedirectToPage();
     }
 }

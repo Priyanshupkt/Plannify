@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
 using Plannify.Models;
 using Plannify.Services;
@@ -10,14 +11,13 @@ using System.Text.Json;
 
 namespace Plannify.Pages.Admin.Timetable;
 
-[Authorize(Roles = "Admin,HOD")]
 public class CreateModel : PageModel
 {
     private readonly AppDbContext _context;
-    private readonly ConflictDetector _conflictDetector;
+    private readonly IConflictDetectorService _conflictDetector;
     private readonly AuditService _auditService;
 
-    public CreateModel(AppDbContext context, ConflictDetector conflictDetector, AuditService auditService)
+    public CreateModel(AppDbContext context, IConflictDetectorService conflictDetector, AuditService auditService)
     {
         _context = context;
         _conflictDetector = conflictDetector;
@@ -257,6 +257,42 @@ public class CreateModel : PageModel
             conflicts.Add(classConflict.Message);
 
         return new JsonResult(conflicts);
+    }
+
+    /// <summary>
+    /// AJAX endpoint to get suggested time slots when conflict detected
+    /// Called from JavaScript when user selects conflicted time
+    /// </summary>
+    public async Task<JsonResult> OnGetSuggestionsAsync(int semesterId, int teacherId, 
+        int classBatchId, int? roomId, string day, string startTime, string endTime)
+    {
+        if (!TimeOnly.TryParse(startTime, out var start) || 
+            !TimeOnly.TryParse(endTime, out var end) || end <= start)
+        {
+            return new JsonResult(new { success = false, message = "Invalid time format" });
+        }
+
+        try
+        {
+            var suggestions = await _conflictDetector.SuggestAlternativeSlotsAsync(
+                teacherId, roomId, classBatchId, start, end, day, semesterId, maxSuggestions: 5);
+
+            return new JsonResult(new 
+            { 
+                success = true,
+                suggestions = suggestions.Select(s => new
+                {
+                    day = s.Day,
+                    startTime = s.StartTime.ToString("HH:mm"),
+                    endTime = s.EndTime.ToString("HH:mm"),
+                    reason = s.Reason
+                }).ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new { success = false, message = ex.Message });
+        }
     }
 
     private async Task<IActionResult> RedisplayFormAsync()

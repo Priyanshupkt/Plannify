@@ -1,10 +1,11 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Plannify.Models;
 
 namespace Plannify.Data;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<ApplicationUser>(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext(options)
 {
     public DbSet<Department> Departments { get; set; }
     public DbSet<AcademicYear> AcademicYears { get; set; }
@@ -67,35 +68,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
 
         builder.Entity<AcademicYear>()
             .HasIndex(a => a.IsActive);
-
-        SeedDefaultData(builder);
-    }
-
-    private void SeedDefaultData(ModelBuilder builder)
-    {
-        var departmentId = 1;
-        builder.Entity<Department>().HasData(
-            new Department
-            {
-                Id = departmentId,
-                Name = "Computer Science",
-                Code = "CS",
-                ShortName = "CSE",
-                HODName = "Dr. John Smith"
-            }
-        );
-
-        var academicYearId = 1;
-        builder.Entity<AcademicYear>().HasData(
-            new AcademicYear
-            {
-                Id = academicYearId,
-                YearLabel = "2025-26",
-                StartDate = new DateTime(2025, 7, 1),
-                EndDate = new DateTime(2026, 6, 30),
-                IsActive = true
-            }
-        );
     }
 }
 
