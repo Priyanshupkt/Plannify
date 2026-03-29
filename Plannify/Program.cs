@@ -67,6 +67,21 @@ builder.Services.AddAutoMapper(
     typeof(SubstitutionMappingProfile)
 );
 
+// ✅ AUTHENTICATION & AUTHORIZATION
+builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.SlidingExpiration = true;
+    });
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("Admin", policy => policy.RequireRole("Admin"))
+    .AddPolicy("User", policy => policy.RequireAuthenticatedUser());
+
 // ✅ PRESENTATION LAYER
 builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
