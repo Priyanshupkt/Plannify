@@ -166,7 +166,7 @@ public class ClassBatchService : IClassBatchService
             if (!createResult.IsSuccess)
                 return Result<int>.Failure(createResult.ErrorMessage ?? "Failed to create class batch");
 
-            var classBatch = createResult.Value;
+            var classBatch = createResult.Value ?? throw new InvalidOperationException("Class batch creation returned null");
 
             // Persist
             await _repository.AddAsync(classBatch);

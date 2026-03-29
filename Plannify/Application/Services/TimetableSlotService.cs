@@ -249,7 +249,7 @@ public class TimetableSlotService : ITimetableSlotService
             if (!createResult.IsSuccess)
                 return Result<int>.Failure(createResult.ErrorMessage ?? "Failed to create timetable slot");
 
-            var slot = createResult.Value;
+            var slot = createResult.Value ?? throw new InvalidOperationException("Timetable slot creation returned null");
 
             // Check for conflicts
             if (slot.RoomId.HasValue && await _repository.IsRoomOccupiedAsync(slot.RoomId.Value, request.Day, request.StartTime, request.EndTime))

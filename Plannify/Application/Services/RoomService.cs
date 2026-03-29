@@ -89,7 +89,7 @@ public class RoomService : IRoomService
             if (!createResult.IsSuccess)
                 return Result<int>.Failure(createResult.ErrorMessage ?? "Failed to create room");
 
-            var room = createResult.Value;
+            var room = createResult.Value ?? throw new InvalidOperationException("Room creation returned null");
 
             // Persist
             await _repository.AddAsync(room);

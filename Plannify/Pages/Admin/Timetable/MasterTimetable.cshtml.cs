@@ -39,17 +39,18 @@ public class MasterTimetableModel : PageModel
             return;
 
         // Load all timetable data with relationships
+        var semesterId = semester.Id;
         var allSlots = await _context.TimetableSlots
             .Include(t => t.ClassBatch)
             .Include(t => t.Subject)
             .Include(t => t.Teacher)
             .Include(t => t.Room)
-            .Where(t => t.SemesterId == semester.Id)
+            .Where(t => t.SemesterId == semesterId)
             .ToListAsync();
 
         // Build class-based timetables
         var classesByBatch = allSlots
-            .GroupBy(t => new { t.ClassBatchId, BatchName = t.ClassBatch.BatchName })
+            .GroupBy(t => new { t.ClassBatchId, BatchName = t.ClassBatch!.BatchName })
             .Select(g => new ClassTimetableView
             {
                 ClassBatchId = g.Key.ClassBatchId,

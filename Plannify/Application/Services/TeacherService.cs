@@ -168,7 +168,7 @@ public class TeacherService : ITeacherService
             if (!createResult.IsSuccess)
                 return Result<int>.Failure(createResult.ErrorMessage ?? "Failed to create teacher");
 
-            var teacher = createResult.Value;
+            var teacher = createResult.Value ?? throw new InvalidOperationException("Teacher creation returned null");
             teacher.Designation = request.Designation;
             teacher.MaxWeeklyHours = request.MaxWeeklyHours;
 
@@ -328,11 +328,11 @@ public class TeacherService : ITeacherService
     }
 
     // Helper method
-    private async Task<domainSemester?> GetActiveSemesterAsync()
+    private Task<domainSemester?> GetActiveSemesterAsync()
     {
         // TODO: Inject a SemesterRepository or similar
         // For now, return null - this will be refactored
-        return null;
+        return Task.FromResult<domainSemester?>(null);
     }
 }
 

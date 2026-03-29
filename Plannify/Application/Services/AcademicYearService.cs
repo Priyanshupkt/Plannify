@@ -131,7 +131,7 @@ public class AcademicYearService : IAcademicYearService
             if (!createResult.IsSuccess)
                 return Result<int>.Failure(createResult.ErrorMessage ?? "Failed to create academic year");
 
-            var academicYear = createResult.Value;
+            var academicYear = createResult.Value ?? throw new InvalidOperationException("Academic year creation returned null");
 
             // Persist
             await _repository.AddAsync(academicYear);

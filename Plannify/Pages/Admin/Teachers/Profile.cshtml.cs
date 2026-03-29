@@ -53,11 +53,12 @@ public class ProfileModel : PageModel
 
             if (ActiveSemester != null)
             {
+                var semesterId = ActiveSemester.Id;
                 TimetableSlots = await _context.TimetableSlots
                     .Include(t => t.Subject)
                     .Include(t => t.ClassBatch)
                     .Include(t => t.Room)
-                    .Where(t => t.TeacherId == id && t.SemesterId == ActiveSemester.Id)
+                    .Where(t => t.TeacherId == id && t.SemesterId == semesterId)
                     .ToListAsync();
 
                 foreach (var slot in TimetableSlots)
@@ -69,7 +70,7 @@ public class ProfileModel : PageModel
 
                 var subjectIds = TimetableSlots
                     .Where(t => t.SubjectId.HasValue)
-                    .Select(t => t.SubjectId.Value)
+                    .Select(t => t.SubjectId!.Value)
                     .Distinct()
                     .ToList();
 

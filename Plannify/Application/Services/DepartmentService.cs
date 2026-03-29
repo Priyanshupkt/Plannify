@@ -104,7 +104,7 @@ public class DepartmentService : IDepartmentService
             if (!createResult.IsSuccess)
                 return Result<int>.Failure(createResult.ErrorMessage ?? "Failed to create department");
 
-            var department = createResult.Value;
+            var department = createResult.Value ?? throw new InvalidOperationException("Department creation returned null");
 
             // Persist
             await _repository.AddAsync(department);

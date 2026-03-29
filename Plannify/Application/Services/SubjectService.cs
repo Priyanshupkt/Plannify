@@ -121,7 +121,7 @@ public class SubjectService : ISubjectService
             if (!createResult.IsSuccess)
                 return Result<int>.Failure(createResult.ErrorMessage ?? "Failed to create subject");
 
-            var subject = createResult.Value;
+            var subject = createResult.Value ?? throw new InvalidOperationException("Subject creation returned null");
 
             // Persist
             await _repository.AddAsync(subject);

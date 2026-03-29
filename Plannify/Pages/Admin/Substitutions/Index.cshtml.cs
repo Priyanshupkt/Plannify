@@ -216,13 +216,15 @@ public class IndexModel : PageModel
 
     private async Task LoadHistoryAsync()
     {
+        if (_context == null) return;
+
         SubstitutionHistory = await _context.SubstitutionRecords
-            .Include(s => s.OriginalTeacher)
-            .Include(s => s.SubstituteTeacher)
-            .Include(s => s.TimetableSlot)
-            .ThenInclude(s => s.Subject)
-            .Include(s => s.TimetableSlot)
-            .ThenInclude(s => s.ClassBatch)
+            .Include(s => s.OriginalTeacher!)
+            .Include(s => s.SubstituteTeacher!)
+            .Include(s => s.TimetableSlot!)
+            .ThenInclude(s => s!.Subject)
+            .Include(s => s.TimetableSlot!)
+            .ThenInclude(s => s!.ClassBatch)
             .OrderByDescending(s => s.Date)
             .Take(50)
             .ToListAsync();

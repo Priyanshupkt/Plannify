@@ -135,7 +135,7 @@ public class SemesterService : ISemesterService
             if (!createResult.IsSuccess)
                 return Result<int>.Failure(createResult.ErrorMessage ?? "Failed to create semester");
 
-            var semester = createResult.Value;
+            var semester = createResult.Value ?? throw new InvalidOperationException("Semester creation returned null");
 
             // Persist
             await _repository.AddAsync(semester);
