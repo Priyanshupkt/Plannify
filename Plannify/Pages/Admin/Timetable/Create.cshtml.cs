@@ -6,22 +6,22 @@ using Microsoft.EntityFrameworkCore;
 using Plannify.Application.Contracts;
 using Plannify.Data;
 using Plannify.Models;
-using Plannify.Services;
 using System.Text.Json;
 
 namespace Plannify.Pages.Admin.Timetable;
 
+[Authorize]
 public class CreateModel : PageModel
 {
     private readonly AppDbContext _context;
     private readonly IConflictDetectorService _conflictDetector;
-    private readonly AuditService _auditService;
+    private readonly ITimetableSlotService _timetableSlotService;
 
-    public CreateModel(AppDbContext context, IConflictDetectorService conflictDetector, AuditService auditService)
+    public CreateModel(AppDbContext context, IConflictDetectorService conflictDetector, ITimetableSlotService timetableSlotService)
     {
         _context = context;
         _conflictDetector = conflictDetector;
-        _auditService = auditService;
+        _timetableSlotService = timetableSlotService;
     }
 
     [BindProperty]
@@ -147,28 +147,28 @@ public class CreateModel : PageModel
         _context.TimetableSlots.Add(slot);
         await _context.SaveChangesAsync();
 
-        // Audit log
+        // Audit log - TODO: implement via audit service
         var note = Input.IgnoreConflicts && conflicts.Count > 0
             ? $"Saved with conflicts: {string.Join(", ", conflicts)}"
             : "Slot created successfully";
 
-        await _auditService.LogAsync(
-            "CREATE",
-            "TimetableSlot",
-            slot.Id.ToString(),
-            null,
-            JsonSerializer.Serialize(new
-            {
-                slot.Day,
-                slot.StartTime,
-                slot.EndTime,
-                slot.SlotType,
-                ClassId = Input.ClassBatchId,
-                slot.TeacherId,
-                slot.SubjectId,
-                slot.RoomId,
-                note
-            }));
+        // await _auditService.LogAsync(
+        //     "CREATE",
+        //     "TimetableSlot",
+        //     slot.Id.ToString(),
+        //     null,
+        //     JsonSerializer.Serialize(new
+        //     {
+        //         slot.Day,
+        //         slot.StartTime,
+        //         slot.EndTime,
+        //         slot.SlotType,
+        //         ClassId = Input.ClassBatchId,
+        //         slot.TeacherId,
+        //         slot.SubjectId,
+        //         slot.RoomId,
+        //         note
+        //     }));
 
         TempData["Success"] = "Slot added successfully.";
         return RedirectToPage(new { classId = Input.ClassBatchId, semesterId = Input.SemesterId });
@@ -193,12 +193,13 @@ public class CreateModel : PageModel
         _context.TimetableSlots.Remove(slot);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogAsync(
-            "DELETE",
-            "TimetableSlot",
-            id.ToString(),
-            JsonSerializer.Serialize(new { slot.Day, slot.StartTime, slot.EndTime, slot.SlotType }),
-            null);
+        // TODO: implement audit logging via service
+        // await _auditService.LogAsync(
+        //     "DELETE",
+        //     "TimetableSlot",
+        //     id.ToString(),
+        //     JsonSerializer.Serialize(new { slot.Day, slot.StartTime, slot.EndTime, slot.SlotType }),
+        //     null);
 
         TempData["Success"] = "Slot deleted successfully.";
         return RedirectToPage(new { classId = slot.ClassBatchId, semesterId = slot.SemesterId });
