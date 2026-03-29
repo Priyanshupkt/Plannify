@@ -22,6 +22,8 @@ public class UpdateClassBatchRequest
     public string BatchName { get; set; } = string.Empty;
     public int Strength { get; set; }
     public int Semester { get; set; }
+    public int DepartmentId { get; set; }
+    public int AcademicYearId { get; set; }
     public int? RoomId { get; set; }
 }
 

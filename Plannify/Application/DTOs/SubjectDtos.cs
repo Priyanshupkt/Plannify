@@ -7,6 +7,7 @@ public class CreateSubjectRequest
 {
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
+    public string SubjectType { get; set; } = "Theory";
     public int DepartmentId { get; set; }
     public int SemesterNumber { get; set; }
     public int Credits { get; set; }
@@ -21,6 +22,7 @@ public class UpdateSubjectRequest
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
+    public string SubjectType { get; set; } = "Theory";
     public int DepartmentId { get; set; }
     public int SemesterNumber { get; set; }
     public int Credits { get; set; }
@@ -35,6 +37,7 @@ public class SubjectDto
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
+    public string SubjectType { get; set; } = "Theory";
     public int DepartmentId { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
     public int SemesterNumber { get; set; }
