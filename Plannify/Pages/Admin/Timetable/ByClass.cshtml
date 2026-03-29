@@ -2,18 +2,18 @@
 @model Plannify.Pages.Admin.Timetable.ByClassModel
 @{
     ViewData["Title"] = "Timetable by Class";
+    Layout = "/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid mt-4">
-    <h2 class="mb-4">Timetable by Class</h2>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
     <!-- Top Controls -->
-    <div class="row mb-4">
-        <div class="col-lg-8">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label for="classSelect" class="form-label">Select Class</label>
-                    <select class="form-select" id="classSelect" onchange="changeClass()">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div class="lg:col-span-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="classSelect" class="block text-xs font-bold text-on-surface-variant mb-2">Select Class</label>
+                    <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="classSelect" onchange="changeClass()">
                         <option value="">-- Select Class --</option>
                         @foreach (var cls in Model.ClassBatches)
                         {
@@ -28,9 +28,9 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="semesterSelect" class="form-label">Select Semester</label>
-                    <select class="form-select" id="semesterSelect" onchange="changeSemester()">
+                <div>
+                    <label for="semesterSelect" class="block text-xs font-bold text-on-surface-variant mb-2">Select Semester</label>
+                    <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="semesterSelect" onchange="changeSemester()">
                         <option value="">-- Select Semester --</option>
                         @foreach (var sem in Model.Semesters)
                         {
@@ -47,70 +47,82 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-4">
-            <div class="d-grid gap-2 d-lg-flex justify-content-lg-end" style="height: 100%; align-items: flex-end;">
-                <form method="post" asp-page-handler="ExportPdf" style="display: inline;">
-                    <input type="hidden" name="classId" value="@Model.CurrentClass?.Id">
-                    <input type="hidden" name="semesterId" value="@Model.CurrentSemester?.Id">
-                    <button type="submit" class="btn btn-primary" @(Model.CurrentClass == null ? "disabled" : "")>
-                        <i class="fas fa-print"></i> Print PDF
-                    </button>
-                </form>
-            </div>
+        <div class="lg:col-span-1 flex items-end">
+            <form method="post" asp-page-handler="ExportPdf" class="w-full">
+                <input type="hidden" name="classId" value="@Model.CurrentClass?.Id">
+                <input type="hidden" name="semesterId" value="@Model.CurrentSemester?.Id">
+                <button type="submit" class="w-full bg-primary hover:bg-primary-container text-on-primary px-4 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all @(Model.CurrentClass == null ? "opacity-40 cursor-not-allowed" : "")" @(Model.CurrentClass == null ? "disabled" : "")>
+                    <span class="material-symbols-outlined inline mr-2 -mt-1">print</span>
+                    Print PDF
+                </button>
+            </form>
         </div>
     </div>
 
     @if (Model.CurrentClass != null && Model.CurrentSemester != null && Model.TimeRanges.Count > 0)
     {
         <!-- Timetable Grid -->
-        <div class="card mb-4">
-            <div class="card-body p-0" style="overflow-x: auto;">
-                <table class="table table-bordered table-sm mb-0">
-                    <thead class="table-light">
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm mb-6">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-surface-container-low/50 border-b border-outline-variant/20">
                         <tr>
-                            <th class="text-center" style="min-width: 100px;">Time</th>
+                            <th class="text-center px-4 py-4 font-bold text-on-surface min-w-[100px]" style="width: 100px;">Time</th>
                             @foreach (var day in Model.Days)
                             {
-                                <th class="text-center" style="min-width: 120px;">@day.Substring(0, 3)</th>
+                                <th class="text-center px-4 py-4 font-bold text-on-surface min-w-[120px]" style="width: 120px;">@day.Substring(0, 3)</th>
                             }
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var timeRange in Model.TimeRanges)
                         {
-                            <tr>
-                                <td class="text-center text-nowrap fw-bold">
-                                    <small>@timeRange</small>
+                            <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low/30 transition-colors">
+                                <td class="text-center px-4 py-4 font-bold text-on-surface text-xs text-nowrap">
+                                    @timeRange
                                 </td>
                                 @foreach (var day in Model.Days)
                                 {
                                     var slot = Model.Grid[day][timeRange];
-                                    string bgClass = "bg-light";
+                                    string bgClass = "";
                                     
-                                    if (slot != null)
+                                    if (slot != null && slot.SlotType == "Theory")
                                     {
-                                        bgClass = slot.SlotType switch
-                                        {
-                                            "Theory" => "bg-white",
-                                            "Lab" => "tg-lab",
-                                            "GAP" => "tg-gap",
-                                            "Elective" => "bg-light-purple",
-                                            _ => "bg-light"
-                                        };
+                                        bgClass = "bg-white";
+                                    }
+                                    else if (slot != null && slot.SlotType == "Lab")
+                                    {
+                                        bgClass = "bg-blue-50";
+                                    }
+                                    else if (slot != null && slot.SlotType == "GAP")
+                                    {
+                                        bgClass = "bg-gray-100";
+                                    }
+                                    else
+                                    {
+                                        bgClass = "bg-surface-container-low/20";
                                     }
 
-                                    <td class="@bgClass text-center align-middle" style="min-height: 60px;">
-                                        @if (slot != null)
+                                    <td class="text-center px-4 py-4 align-middle @bgClass" style="min-height: 60px;">
+                                        @if (slot != null && slot.SlotType == "GAP")
                                         {
-                                            <div class="small">
-                                                <strong>@slot.Subject?.Name</strong><br>
-                                                <span class="badge bg-info">@slot.Teacher?.Initials</span><br>
-                                                <span class="text-muted">@slot.Room?.RoomNumber</span>
+                                            <span class="text-on-surface-variant italic text-xs">— GAP —</span>
+                                        }
+                                        else if (slot != null)
+                                        {
+                                            <div class="text-xs space-y-1">
+                                                <div class="font-bold text-on-surface">@slot.Subject?.Code</div>
+                                                @if (slot.SlotType == "Lab")
+                                                {
+                                                    <span class="inline-block px-2 py-1 bg-blue-200 text-blue-800 text-xs font-bold rounded">LAB</span>
+                                                }
+                                                <div class="text-on-surface-variant">@slot.Teacher?.Initials</div>
+                                                <div class="text-on-surface-variant">@slot.Room?.RoomNumber</div>
                                             </div>
                                         }
                                         else
                                         {
-                                            <span class="text-muted">Free</span>
+                                            <span class="text-on-surface-variant text-xs">Free</span>
                                         }
                                     </td>
                                 }
@@ -121,60 +133,9 @@
             </div>
         </div>
 
-        <!-- Summary Statistics -->
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">Daily Statistics</h6>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-sm mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Day</th>
-                                    <th class="text-center">Teaching Periods</th>
-                                    <th class="text-center">Free Periods</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var day in Model.Days)
-                                {
-                                    <tr>
-                                        <td><strong>@day.Substring(0, 3)</strong></td>
-                                        <td class="text-center">
-                                            <span class="badge bg-primary">@Model.PeriodsPerDay[day]</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge bg-secondary">@Model.FreePeriods[day]</span>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">Weekly Summary</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="text-center mb-3">
-                            <h3 class="text-primary">@Model.TotalWeeklyPeriods</h3>
-                            <p class="text-muted mb-0">Total Teaching Periods per Week</p>
-                        </div>
-                        <hr>
-                        <div class="small">
-                            <p><span class="badge bg-light-purple">Elective</span></p>
-                            <p><span class="badge tg-lab">Lab</span></p>
-                            <p><span class="badge tg-gap">GAP</span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Summary Row -->
+        <div class="alert alert-light mt-3 mb-4 border">
+            <strong>Total Teaching Slots: @Model.TotalTeachingSlots | Total GAP Slots: @Model.TotalGapSlots | Total Free Slots: @Model.TotalFreeSlots</strong>
         </div>
     }
     else

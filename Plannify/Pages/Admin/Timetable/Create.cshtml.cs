@@ -3,25 +3,25 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
-using Plannify.Services;
+using Plannify.Domain.Entities;
 using System.Text.Json;
 
 namespace Plannify.Pages.Admin.Timetable;
 
-[Authorize(Roles = "Admin,HOD")]
+[Authorize]
 public class CreateModel : PageModel
 {
     private readonly AppDbContext _context;
-    private readonly ConflictDetector _conflictDetector;
-    private readonly AuditService _auditService;
+    private readonly IConflictDetectorService _conflictDetector;
+    private readonly ITimetableSlotService _timetableSlotService;
 
-    public CreateModel(AppDbContext context, ConflictDetector conflictDetector, AuditService auditService)
+    public CreateModel(AppDbContext context, IConflictDetectorService conflictDetector, ITimetableSlotService timetableSlotService)
     {
         _context = context;
         _conflictDetector = conflictDetector;
-        _auditService = auditService;
+        _timetableSlotService = timetableSlotService;
     }
 
     [BindProperty]
@@ -147,28 +147,28 @@ public class CreateModel : PageModel
         _context.TimetableSlots.Add(slot);
         await _context.SaveChangesAsync();
 
-        // Audit log
+        // Audit log - TODO: implement via audit service
         var note = Input.IgnoreConflicts && conflicts.Count > 0
             ? $"Saved with conflicts: {string.Join(", ", conflicts)}"
             : "Slot created successfully";
 
-        await _auditService.LogAsync(
-            "CREATE",
-            "TimetableSlot",
-            slot.Id.ToString(),
-            null,
-            JsonSerializer.Serialize(new
-            {
-                slot.Day,
-                slot.StartTime,
-                slot.EndTime,
-                slot.SlotType,
-                ClassId = Input.ClassBatchId,
-                slot.TeacherId,
-                slot.SubjectId,
-                slot.RoomId,
-                note
-            }));
+        // await _auditService.LogAsync(
+        //     "CREATE",
+        //     "TimetableSlot",
+        //     slot.Id.ToString(),
+        //     null,
+        //     JsonSerializer.Serialize(new
+        //     {
+        //         slot.Day,
+        //         slot.StartTime,
+        //         slot.EndTime,
+        //         slot.SlotType,
+        //         ClassId = Input.ClassBatchId,
+        //         slot.TeacherId,
+        //         slot.SubjectId,
+        //         slot.RoomId,
+        //         note
+        //     }));
 
         TempData["Success"] = "Slot added successfully.";
         return RedirectToPage(new { classId = Input.ClassBatchId, semesterId = Input.SemesterId });
@@ -184,7 +184,7 @@ public class CreateModel : PageModel
             return NotFound();
 
         // Check for substitution records
-        var hasSubstitutions = await _context.SubstitutionRecords
+        var hasSubstitutions = await _context.Substitutions
             .AnyAsync(s => s.TimetableSlotId == id);
 
         if (hasSubstitutions)
@@ -193,12 +193,13 @@ public class CreateModel : PageModel
         _context.TimetableSlots.Remove(slot);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogAsync(
-            "DELETE",
-            "TimetableSlot",
-            id.ToString(),
-            JsonSerializer.Serialize(new { slot.Day, slot.StartTime, slot.EndTime, slot.SlotType }),
-            null);
+        // TODO: implement audit logging via service
+        // await _auditService.LogAsync(
+        //     "DELETE",
+        //     "TimetableSlot",
+        //     id.ToString(),
+        //     JsonSerializer.Serialize(new { slot.Day, slot.StartTime, slot.EndTime, slot.SlotType }),
+        //     null);
 
         TempData["Success"] = "Slot deleted successfully.";
         return RedirectToPage(new { classId = slot.ClassBatchId, semesterId = slot.SemesterId });
@@ -257,6 +258,42 @@ public class CreateModel : PageModel
             conflicts.Add(classConflict.Message);
 
         return new JsonResult(conflicts);
+    }
+
+    /// <summary>
+    /// AJAX endpoint to get suggested time slots when conflict detected
+    /// Called from JavaScript when user selects conflicted time
+    /// </summary>
+    public async Task<JsonResult> OnGetSuggestionsAsync(int semesterId, int teacherId, 
+        int classBatchId, int? roomId, string day, string startTime, string endTime)
+    {
+        if (!TimeOnly.TryParse(startTime, out var start) || 
+            !TimeOnly.TryParse(endTime, out var end) || end <= start)
+        {
+            return new JsonResult(new { success = false, message = "Invalid time format" });
+        }
+
+        try
+        {
+            var suggestions = await _conflictDetector.SuggestAlternativeSlotsAsync(
+                teacherId, roomId, classBatchId, start, end, day, semesterId, maxSuggestions: 5);
+
+            return new JsonResult(new 
+            { 
+                success = true,
+                suggestions = suggestions.Select(s => new
+                {
+                    day = s.Day,
+                    startTime = s.StartTime.ToString("HH:mm"),
+                    endTime = s.EndTime.ToString("HH:mm"),
+                    reason = s.Reason
+                }).ToList()
+            });
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new { success = false, message = ex.Message });
+        }
     }
 
     private async Task<IActionResult> RedisplayFormAsync()

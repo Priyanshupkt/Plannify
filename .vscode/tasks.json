@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Plannify",
+			"type": "shell",
+			"command": "cd /home/cy3pher/Documents/WorkSpace-Dev/Plannify && dotnet build",
+			"problemMatcher": [
+				"$msCompile"
+			]
+		},
+		{
+			"label": "Build Plannify",
+			"type": "shell",
+			"command": "cd /home/cy3pher/Documents/WorkSpace-Dev/Plannify && dotnet build",
+			"problemMatcher": [
+				"$msCompile"
+			]
+		},
+		{
+			"label": "Build Plannify",
+			"type": "shell",
+			"command": "cd /home/cy3pher/Documents/WorkSpace-Dev/Plannify && dotnet build",
+			"problemMatcher": [
+				"$msCompile"
+			]
+		}
+	]
+}

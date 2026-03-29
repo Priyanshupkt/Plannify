@@ -3,22 +3,27 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 using Plannify.Services;
 
 namespace Plannify.Pages.Admin.Timetable;
 
-[Authorize(Roles = "Admin,HOD")]
+[Authorize]
 public class ByClassModel : PageModel
 {
     private readonly AppDbContext _context;
-    private readonly TimetableExportService _exportService;
+    private readonly PdfExportService _pdfService;
+    private readonly IClassBatchService _classBatchService;
+    private readonly ISemesterService _semesterService;
 
-    public ByClassModel(AppDbContext context, TimetableExportService exportService)
+    public ByClassModel(AppDbContext context, PdfExportService pdfService, IClassBatchService classBatchService, ISemesterService semesterService)
     {
         _context = context;
-        _exportService = exportService;
+        _pdfService = pdfService;
+        _classBatchService = classBatchService;
+        _semesterService = semesterService;
     }
 
     public List<SelectListItem> ClassBatches { get; set; } = new();
@@ -33,6 +38,11 @@ public class ByClassModel : PageModel
     public Dictionary<string, int> PeriodsPerDay { get; set; } = new();
     public Dictionary<string, int> FreePeriods { get; set; } = new();
     public int TotalWeeklyPeriods { get; set; }
+    
+    // Summary statistics
+    public int TotalTeachingSlots { get; set; }
+    public int TotalGapSlots { get; set; }
+    public int TotalFreeSlots { get; set; }
 
     public async Task OnGetAsync(int? classId, int? semesterId)
     {
@@ -61,17 +71,17 @@ public class ByClassModel : PageModel
 
         Days = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
-        // Get unique time ranges across all slots
+        // Get unique time ranges across all slots — format as "HH:mm – HH:mm", sorted
         var timeSlots = slots
             .Select(s => (s.StartTime, s.EndTime))
             .Distinct()
             .OrderBy(t => t.StartTime)
-            .Select(t => $"{t.StartTime:HH:mm}-{t.EndTime:HH:mm}")
+            .Select(t => $"{t.StartTime:HH:mm} – {t.EndTime:HH:mm}")
             .ToList();
 
         TimeRanges = timeSlots;
 
-        // Build grid dictionary
+        // Build grid dictionary: [Day][TimeRange] = slot or null
         Grid = new();
         foreach (var day in Days)
         {
@@ -85,29 +95,18 @@ public class ByClassModel : PageModel
         // Fill grid with slots
         foreach (var slot in slots)
         {
-            var timeRange = $"{slot.StartTime:HH:mm}-{slot.EndTime:HH:mm}";
+            var timeRange = $"{slot.StartTime:HH:mm} – {slot.EndTime:HH:mm}";
             if (Grid.ContainsKey(slot.Day) && Grid[slot.Day].ContainsKey(timeRange))
             {
                 Grid[slot.Day][timeRange] = slot;
             }
         }
 
-        // Calculate statistics
-        PeriodsPerDay = new();
-        FreePeriods = new();
-        int totalSlots = 0;
-
-        foreach (var day in Days)
-        {
-            int periodsThisDay = Grid[day].Values.Count(s => s != null);
-            int freeThisDay = Grid[day].Values.Count(s => s == null || s.SlotType == "GAP");
-
-            PeriodsPerDay[day] = periodsThisDay;
-            FreePeriods[day] = freeThisDay;
-            totalSlots += periodsThisDay;
-        }
-
-        TotalWeeklyPeriods = totalSlots;
+        // Calculate summary statistics
+        TotalTeachingSlots = slots.Count(s => s.SlotType != "GAP");
+        TotalGapSlots = slots.Count(s => s.SlotType == "GAP");
+        int totalCells = Days.Count * TimeRanges.Count;
+        TotalFreeSlots = totalCells - slots.Count;
     }
 
     private async Task LoadDropdownsAsync()
@@ -132,10 +131,8 @@ public class ByClassModel : PageModel
 
     public async Task<IActionResult> OnPostExportPdfAsync(int classId, int semesterId)
     {
-        var classBatch = await _context.ClassBatches.FindAsync(classId);
-        var semester = await _context.Semesters
-            .Include(s => s.AcademicYear)
-            .FirstOrDefaultAsync(s => s.Id == semesterId);
+        var classBatch = await _context.ClassBatches.FirstOrDefaultAsync(c => c.Id == classId);
+        var semester = await _context.Semesters.FirstOrDefaultAsync(s => s.Id == semesterId);
 
         if (classBatch == null || semester == null)
             return NotFound();
@@ -145,13 +142,12 @@ public class ByClassModel : PageModel
         await BuildGridAsync(classId, semesterId);
 
         var fileName = $"Timetable_{classBatch.BatchName}_{semester.Name}_{DateTime.Now:yyyy-MM-dd}.pdf";
-        var bytes = _exportService.ExportClassTimetablePdf(
+        var bytes = _pdfService.GenerateClassTimetablePdf(
             classBatch.BatchName,
             semester.Name,
-            semester.AcademicYear?.YearLabel ?? "N/A",
-            Grid,
+            Days,
             TimeRanges,
-            Days);
+            Grid);
 
         return File(bytes, "application/pdf", fileName);
     }

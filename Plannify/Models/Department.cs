@@ -16,8 +16,6 @@ public class Department
     [MaxLength(20)]
     public string ShortName { get; set; } = string.Empty;
 
-    public string? HODName { get; set; }
-
     public virtual List<Teacher> Teachers { get; set; } = new();
     public virtual List<Subject> Subjects { get; set; } = new();
     public virtual List<ClassBatch> ClassBatches { get; set; } = new();

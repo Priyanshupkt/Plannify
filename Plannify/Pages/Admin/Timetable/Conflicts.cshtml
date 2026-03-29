@@ -1,235 +1,203 @@
 @page
 @model Plannify.Pages.Admin.Timetable.ConflictsModel
 @{
-    ViewData["Title"] = "Timetable Conflict Report";
+    ViewData["Title"] = "Conflict Report";
+    Layout = "/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid mt-4">
-    <h2 class="mb-4">Timetable Conflict Report</h2>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- Top Controls -->
-    <div class="row mb-4">
-        <div class="col-lg-8">
-            <div class="row g-3 align-items-end">
-                <div class="col-md-6">
-                    <label for="semesterSelect" class="form-label">Select Semester</label>
-                    <form method="post" asp-page-handler="Scan" class="row g-2">
-                        <div class="col">
-                            <select class="form-select" id="semesterSelect" name="semesterId" asp-items="Model.Semesters" onchange="this.form.submit()" required>
-                                <option value="">-- Select Semester --</option>
-                            </select>
-                        </div>
-                    </form>
-                </div>
-                <div class="col-md-6">
-                    @if (Model.LastScanTime.HasValue)
-                    {
-                        <small class="text-muted d-block">
-                            Last scanned: <strong>@Model.LastScanTime.Value:g</strong>
-                        </small>
-                    }
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="d-grid gap-2 d-lg-flex justify-content-lg-end">
-                <form method="post" asp-page-handler="ExportConflictsExcel" style="display: inline;">
-                    <input type="hidden" name="semesterId" value="@Model.CurrentSemesterId">
-                    <button type="submit" class="btn btn-success" @(Model.AllConflicts.Count == 0 ? "disabled" : "")>
-                        <i class="fas fa-download"></i> Export Excel
+    <!-- Top Section -->
+    <div class="mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="semesterSelect" class="block text-xs font-bold text-on-surface-variant mb-2">Semester</label>
+                <form method="post" asp-page-handler="Scan" class="flex gap-2">
+                    <select class="flex-1 px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="semesterSelect" name="scanSemesterId" asp-items="Model.Semesters">
+                        <option value="">-- Select Semester --</option>
+                    </select>
+                    <button type="submit" class="bg-primary hover:bg-primary-container text-on-primary px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">
+                        <span class="material-symbols-outlined inline -mt-1">search</span>
+                        Run Scan
                     </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Results Section -->
-    @if (Model.AllConflicts.Count == 0 && Model.CurrentSemesterId > 0)
+    @if (Model.LastScanTime.HasValue)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <h4 class="alert-heading">✓ No Conflicts Detected</h4>
-            <p class="mb-0">This semester has a clean schedule with no timetable conflicts.</p>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="bg-info/10 border border-info/30 rounded-lg p-3 mb-4">
+            <small class="text-xs text-info">Last scanned: <strong>@Model.LastScanTime.Value.ToString("HH:mm:ss")</strong></small>
         </div>
     }
-    else if (Model.AllConflicts.Count > 0)
+
+    <!-- Results -->
+    @if (Model.ScanRan)
     {
-        <!-- Summary Bar -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card text-center bg-light">
-                    <div class="card-body">
-                        <h3 class="card-title text-danger">@Model.TeacherConflicts.Count</h3>
-                        <p class="card-text">Teacher Conflicts</p>
-                    </div>
-                </div>
+        @if (Model.AllConflicts.Count == 0)
+        {
+            <div class="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
+                <span class="material-symbols-outlined text-4xl text-green-600 block mb-2">check_circle</span>
+                <p class="text-on-surface font-bold">No conflicts found for this semester. Timetable looks clean!</p>
             </div>
-            <div class="col-md-4">
-                <div class="card text-center bg-light">
-                    <div class="card-body">
-                        <h3 class="card-title text-warning">@Model.RoomConflicts.Count</h3>
-                        <p class="card-text">Room Conflicts</p>
-                    </div>
-                </div>
+        }
+        else
+        {
+            <!-- Summary Bar -->
+            <div class="bg-warning/10 border border-warning/30 rounded-2xl p-4 mb-6">
+                <p class="text-sm text-on-surface font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-base">warning</span>
+                    Found <span class="text-warning">@Model.AllConflicts.Count</span> conflicts — 
+                    <span class="px-3 py-1 bg-surface-container-low rounded-full text-xs">Teacher: @Model.TeacherConflicts.Count</span>
+                    <span class="px-3 py-1 bg-surface-container-low rounded-full text-xs">Room: @Model.RoomConflicts.Count</span>
+                    <span class="px-3 py-1 bg-surface-container-low rounded-full text-xs">Class: @Model.ClassConflicts.Count</span>
+                </p>
             </div>
-            <div class="col-md-4">
-                <div class="card text-center bg-light">
-                    <div class="card-body">
-                        <h3 class="card-title text-info">@Model.ClassConflicts.Count</h3>
-                        <p class="card-text">Class Conflicts</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Accordion with Conflict Details -->
-        <div class="accordion" id="conflictAccordion">
-            <!-- Teacher Conflicts -->
-            @if (Model.TeacherConflicts.Count > 0)
-            {
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#teacherConflicts">
-                            <i class="fas fa-user-tie me-2"></i>
-                            Teacher Double-Booking (@Model.TeacherConflicts.Count)
-                        </button>
-                    </h2>
-                    <div id="teacherConflicts" class="accordion-collapse collapse show" data-bs-parent="#conflictAccordion">
-                        <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Teacher</th>
-                                            <th>Day</th>
-                                            <th>Time</th>
-                                            <th>Slot 1</th>
-                                            <th>Slot 2</th>
-                                            <th class="text-center">Action</th>
+            <!-- Conflict Sections -->
+            <div class="space-y-4">
+                <!-- Teacher Double-Booking -->
+                @if (Model.TeacherConflicts.Count > 0)
+                {
+                    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
+                        <div class="px-6 py-4 bg-surface-container-low/50 cursor-pointer hover:bg-surface-container-low/70 transition-colors">
+                            <h6 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">person</span>
+                                Teacher Double-Booking (<span class="text-warning">@Model.TeacherConflicts.Count</span>)
+                            </h6>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-surface-container-low/30 border-b border-outline-variant/20">
+                                    <tr>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Teacher</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Day</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Time</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Slot 1</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Slot 2</th>
+                                        <th class="text-center px-6 py-3 font-bold text-on-surface-variant text-xs">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var conflict in Model.TeacherConflicts)
+                                    {
+                                        <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low/20 transition-colors">
+                                            <td class="px-6 py-3 font-bold text-on-surface">@conflict.AffectedEntity</td>
+                                            <td class="px-6 py-3 text-on-surface-variant">@conflict.Day</td>
+                                            <td class="px-6 py-3 text-on-surface-variant">@conflict.StartTime.ToString("HH:mm") – @conflict.EndTime.ToString("HH:mm")</td>
+                                            <td class="px-6 py-3 text-on-surface-variant text-xs">@conflict.Slot1Description</td>
+                                            <td class="px-6 py-3 text-on-surface-variant text-xs">@conflict.Slot2Description</td>
+                                            <td class="px-6 py-3 text-center">
+                                                <a href="/Admin/Timetable/Create?slotId=@conflict.Slot1Id" class="px-3 py-1 bg-primary/10 text-primary hover:bg-primary hover:text-on-primary text-xs font-bold rounded transition-all inline-flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                                    Fix
+                                                </a>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var conflict in Model.TeacherConflicts.GroupBy(c => new { c.AffectedEntity, c.Day, c.StartTime }))
-                                        {
-                                            var first = conflict.First();
-                                            <tr>
-                                                <td><strong>@first.AffectedEntity</strong></td>
-                                                <td>@first.Day</td>
-                                                <td>@first.StartTime:@first.EndTime</td>
-                                                <td><small>@first.Slot1Description</small></td>
-                                                <td><small>@first.Slot2Description</small></td>
-                                                <td class="text-center">
-                                                    <a href="/Admin/Timetable/Create?slotId=@first.Slot1Id" class="btn btn-sm btn-primary">Resolve</a>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </div>
-            }
+                }
 
-            <!-- Room Conflicts -->
-            @if (Model.RoomConflicts.Count > 0)
-            {
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#roomConflicts">
-                            <i class="fas fa-door-open me-2"></i>
-                            Room Double-Booking (@Model.RoomConflicts.Count)
-                        </button>
-                    </h2>
-                    <div id="roomConflicts" class="accordion-collapse collapse" data-bs-parent="#conflictAccordion">
-                        <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Room</th>
-                                            <th>Day</th>
-                                            <th>Time</th>
-                                            <th>Class 1 + Subject</th>
-                                            <th>Class 2 + Subject</th>
-                                            <th class="text-center">Action</th>
+                <!-- Room Double-Booking -->
+                @if (Model.RoomConflicts.Count > 0)
+                {
+                    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
+                        <div class="px-6 py-4 bg-surface-container-low/50 cursor-pointer hover:bg-surface-container-low/70 transition-colors">
+                            <h6 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">door_sliding</span>
+                                Room Double-Booking (<span class="text-warning">@Model.RoomConflicts.Count</span>)
+                            </h6>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-surface-container-low/30 border-b border-outline-variant/20">
+                                    <tr>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Room</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Day</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Time</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Class 1 + Subject</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Class 2 + Subject</th>
+                                        <th class="text-center px-6 py-3 font-bold text-on-surface-variant text-xs">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var conflict in Model.RoomConflicts)
+                                    {
+                                        <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low/20 transition-colors">
+                                            <td class="px-6 py-3 font-bold text-on-surface">@conflict.AffectedEntity</td>
+                                            <td class="px-6 py-3 text-on-surface-variant">@conflict.Day</td>
+                                            <td class="px-6 py-3 text-on-surface-variant">@conflict.StartTime.ToString("HH:mm") – @conflict.EndTime.ToString("HH:mm")</td>
+                                            <td class="px-6 py-3 text-on-surface-variant text-xs">@conflict.Slot1Description</td>
+                                            <td class="px-6 py-3 text-on-surface-variant text-xs">@conflict.Slot2Description</td>
+                                            <td class="px-6 py-3 text-center">
+                                                <a href="/Admin/Timetable/Create?slotId=@conflict.Slot1Id" class="px-3 py-1 bg-primary/10 text-primary hover:bg-primary hover:text-on-primary text-xs font-bold rounded transition-all inline-flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                                    Fix
+                                                </a>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var conflict in Model.RoomConflicts.GroupBy(c => new { c.AffectedEntity, c.Day, c.StartTime }))
-                                        {
-                                            var first = conflict.First();
-                                            <tr>
-                                                <td><strong>@first.AffectedEntity</strong></td>
-                                                <td>@first.Day</td>
-                                                <td>@first.StartTime:@first.EndTime</td>
-                                                <td><small>@first.Slot1Description</small></td>
-                                                <td><small>@first.Slot2Description</small></td>
-                                                <td class="text-center">
-                                                    <a href="/Admin/Timetable/Create?slotId=@first.Slot1Id" class="btn btn-sm btn-primary">Resolve</a>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </div>
-            }
+                }
 
-            <!-- Class Conflicts -->
-            @if (Model.ClassConflicts.Count > 0)
-            {
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#classConflicts">
-                            <i class="fas fa-sitemap me-2"></i>
-                            Class Overlap (@Model.ClassConflicts.Count)
-                        </button>
-                    </h2>
-                    <div id="classConflicts" class="accordion-collapse collapse" data-bs-parent="#conflictAccordion">
-                        <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Class</th>
-                                            <th>Day</th>
-                                            <th>Time</th>
-                                            <th>Slot 1</th>
-                                            <th>Slot 2</th>
-                                            <th class="text-center">Action</th>
+                <!-- Class Overlap -->
+                @if (Model.ClassConflicts.Count > 0)
+                {
+                    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
+                        <div class="px-6 py-4 bg-surface-container-low/50 cursor-pointer hover:bg-surface-container-low/70 transition-colors">
+                            <h6 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">school</span>
+                                Class Overlap (<span class="text-warning">@Model.ClassConflicts.Count</span>)
+                            </h6>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-surface-container-low/30 border-b border-outline-variant/20">
+                                    <tr>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Class</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Day</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Time</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Subject 1 + Teacher</th>
+                                        <th class="text-left px-6 py-3 font-bold text-on-surface-variant text-xs">Subject 2 + Teacher</th>
+                                        <th class="text-center px-6 py-3 font-bold text-on-surface-variant text-xs">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var conflict in Model.ClassConflicts)
+                                    {
+                                        <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low/20 transition-colors">
+                                            <td class="px-6 py-3 font-bold text-on-surface">@conflict.AffectedEntity</td>
+                                            <td class="px-6 py-3 text-on-surface-variant">@conflict.Day</td>
+                                            <td class="px-6 py-3 text-on-surface-variant">@conflict.StartTime.ToString("HH:mm") – @conflict.EndTime.ToString("HH:mm")</td>
+                                            <td class="px-6 py-3 text-on-surface-variant text-xs">@conflict.Slot1Description</td>
+                                            <td class="px-6 py-3 text-on-surface-variant text-xs">@conflict.Slot2Description</td>
+                                            <td class="px-6 py-3 text-center">
+                                                <a href="/Admin/Timetable/Create?slotId=@conflict.Slot1Id" class="px-3 py-1 bg-primary/10 text-primary hover:bg-primary hover:text-on-primary text-xs font-bold rounded transition-all inline-flex items-center gap-1">
+                                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                                    Fix
+                                                </a>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var conflict in Model.ClassConflicts.GroupBy(c => new { c.AffectedEntity, c.Day, c.StartTime }))
-                                        {
-                                            var first = conflict.First();
-                                            <tr>
-                                                <td><strong>@first.AffectedEntity</strong></td>
-                                                <td>@first.Day</td>
-                                                <td>@first.StartTime:@first.EndTime</td>
-                                                <td><small>@first.Slot1Description</small></td>
-                                                <td><small>@first.Slot2Description</small></td>
-                                                <td class="text-center">
-                                                    <a href="/Admin/Timetable/Create?slotId=@first.Slot1Id" class="btn btn-sm btn-primary">Resolve</a>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </div>
-            }
-        </div>
+                }
+            </div>
+        }
     }
     else
     {
-        <div class="alert alert-info">
-            Select a semester and click scan to analyze for conflicts.
+        <div class="bg-info/10 border border-info/30 rounded-2xl p-6 text-center">
+            <span class="material-symbols-outlined text-2xl text-info block mb-2">info</span>
+            <p class="text-sm text-on-surface">Select a semester and run a scan to detect conflicts.</p>
         </div>
     }
 </div>

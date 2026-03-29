@@ -1,13 +1,14 @@
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 
 namespace Plannify.Services;
 
 /// <summary>
 /// Service to detect scheduling conflicts for teachers, rooms, and classes
 /// </summary>
-public class ConflictDetector
+public class ConflictDetector : IConflictDetectorService
 {
     private readonly AppDbContext _context;
 
@@ -215,4 +216,157 @@ public class ConflictDetector
 
         return conflicts;
     }
+
+    /// <summary>
+    /// Finds available time slots for a teacher on a specific day
+    /// </summary>
+    public async Task<List<(TimeOnly Start, TimeOnly End)>> GetAvailableTeacherSlotsAsync(
+        int teacherId, string day, int semesterId, int durationMinutes = 60)
+    {
+        var busyTimes = await _context.TimetableSlots
+            .AsNoTracking()
+            .Where(s => s.TeacherId == teacherId && s.Day == day && 
+                       s.SemesterId == semesterId && s.SlotType != "GAP")
+            .OrderBy(s => s.StartTime)
+            .ToListAsync();
+
+        return FindAvailableSlots(busyTimes, durationMinutes);
+    }
+
+    /// <summary>
+    /// Finds available time slots for a room on a specific day
+    /// </summary>
+    public async Task<List<(TimeOnly Start, TimeOnly End)>> GetAvailableRoomSlotsAsync(
+        int roomId, string day, int semesterId, int durationMinutes = 60)
+    {
+        var busyTimes = await _context.TimetableSlots
+            .AsNoTracking()
+            .Where(s => s.RoomId == roomId && s.Day == day && 
+                       s.SemesterId == semesterId && s.SlotType != "GAP")
+            .OrderBy(s => s.StartTime)
+            .ToListAsync();
+
+        return FindAvailableSlots(busyTimes, durationMinutes);
+    }
+
+    /// <summary>
+    /// Finds available time slots for a class on a specific day
+    /// </summary>
+    public async Task<List<(TimeOnly Start, TimeOnly End)>> GetAvailableClassSlotsAsync(
+        int classBatchId, string day, int semesterId, int durationMinutes = 60)
+    {
+        var busyTimes = await _context.TimetableSlots
+            .AsNoTracking()
+            .Where(s => s.ClassBatchId == classBatchId && s.Day == day && 
+                       s.SemesterId == semesterId && s.SlotType != "GAP")
+            .OrderBy(s => s.StartTime)
+            .ToListAsync();
+
+        return FindAvailableSlots(busyTimes, durationMinutes);
+    }
+
+    /// <summary>
+    /// Suggests alternative days/times if current slot conflicts
+    /// Returns up to maxSuggestions with preferred day prioritized
+    /// </summary>
+    public async Task<List<TimeslotSuggestion>> SuggestAlternativeSlotsAsync(
+        int teacherId, int? roomId, int classBatchId, TimeOnly requestedStart, TimeOnly requestedEnd,
+        string preferredDay, int semesterId, int maxSuggestions = 3)
+    {
+        var suggestions = new List<TimeslotSuggestion>();
+        var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" };
+        var durationMinutes = (int)(requestedEnd - requestedStart).TotalMinutes;
+        
+        // Prioritize preferred day
+        var daysToCheck = new List<string>();
+        if (!string.IsNullOrEmpty(preferredDay) && days.Contains(preferredDay))
+        {
+            daysToCheck.Add(preferredDay);
+            daysToCheck.AddRange(days.Where(d => d != preferredDay));
+        }
+        else
+        {
+            daysToCheck.AddRange(days);
+        }
+
+        // Search for available slots
+        foreach (var day in daysToCheck)
+        {
+            if (suggestions.Count >= maxSuggestions) break;
+
+            var availableSlots = await GetAvailableTeacherSlotsAsync(teacherId, day, semesterId, durationMinutes);
+            
+            foreach (var slot in availableSlots.Take(2))
+            {
+                // Only suggest slots that fit the requested duration
+                if ((slot.End - slot.Start).TotalMinutes >= durationMinutes)
+                {
+                    var endTime = new TimeOnly(slot.Start.Hour, slot.Start.Minute).Add(TimeSpan.FromMinutes(durationMinutes));
+                    suggestions.Add(new TimeslotSuggestion
+                    {
+                        Day = day,
+                        StartTime = slot.Start,
+                        EndTime = endTime,
+                        Reason = day == preferredDay ? "✓ Available on preferred day" : $"Available on {day}"
+                    });
+                    
+                    if (suggestions.Count >= maxSuggestions) break;
+                }
+            }
+        }
+
+        return suggestions;
+    }
+
+    /// <summary>
+    /// Helper: Calculates available time gaps in a busy schedule
+    /// Assumes working hours 08:00 - 18:00
+    /// </summary>
+    private List<(TimeOnly Start, TimeOnly End)> FindAvailableSlots(
+        List<TimetableSlot> busyTimes, int durationMinutes)
+    {
+        var available = new List<(TimeOnly, TimeOnly)>();
+        var dayStart = new TimeOnly(8, 0);    // 08:00 AM
+        var dayEnd = new TimeOnly(18, 0);    // 06:00 PM
+
+        if (!busyTimes.Any())
+        {
+            available.Add((dayStart, dayEnd));
+            return available;
+        }
+
+        var current = dayStart;
+
+        foreach (var busy in busyTimes)
+        {
+            if (busy.StartTime > current)
+            {
+                var gapDuration = (busy.StartTime - current).TotalMinutes;
+                if (gapDuration >= durationMinutes)
+                {
+                    available.Add((current, busy.StartTime));
+                }
+            }
+            current = busy.EndTime > current ? busy.EndTime : current;
+        }
+
+        // Check final gap
+        if (current < dayEnd && (dayEnd - current).TotalMinutes >= durationMinutes)
+        {
+            available.Add((current, dayEnd));
+        }
+
+        return available;
+    }
+}
+
+/// <summary>
+/// Represents a suggested time slot for timetable creation
+/// </summary>
+public class TimeslotSuggestion
+{
+    public string Day { get; set; } = string.Empty;
+    public TimeOnly StartTime { get; set; }
+    public TimeOnly EndTime { get; set; }
+    public string Reason { get; set; } = string.Empty;
 }

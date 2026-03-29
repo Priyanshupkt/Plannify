@@ -1,233 +1,250 @@
 @page "{id:int}"
 @model Plannify.Pages.Admin.Teachers.ProfileModel
 @{
-    ViewData["Title"] = "Teacher Profile";
+    ViewData["Title"] = $"Profile - {Model.Teacher?.FullName}";
+    ViewData["Section"] = "Teachers";
+    Layout = "/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="card-title mb-0">👤 Teacher Profile</h2>
-        <a href="/Admin/Teachers/" class="btn btn-outline-primary">
-            <i class="bi bi-arrow-left"></i> Back
-        </a>
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold text-on-surface flex items-center gap-2">
+        <span class="material-symbols-outlined text-3xl">person</span>
+        @Model.Teacher?.FullName
+    </h2>
+    <a href="/Admin/Teachers/" class="px-4 py-2 text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center gap-2">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Back
+    </a>
+</div>
+
+<!-- Alerts -->
+@if (TempData["Success"] != null)
+{
+    <div class="mb-6 px-4 py-3 bg-green-50 border border-green-300 text-green-800 rounded-lg flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-green-600">check_circle</span>
+            <span>@TempData["Success"]</span>
+        </div>
+        <button type="button" class="p-1 hover:bg-green-100 rounded transition-colors" onclick="this.parentElement.style.display='none'">
+            <span class="material-symbols-outlined text-sm">close</span>
+        </button>
     </div>
+}
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+@if (TempData["Error"] != null)
+{
+    <div class="mb-6 px-4 py-3 bg-red-50 border border-red-300 text-red-800 rounded-lg flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-red-600">error</span>
+            <span>@TempData["Error"]</span>
         </div>
-    }
+        <button type="button" class="p-1 hover:bg-red-100 rounded transition-colors" onclick="this.parentElement.style.display='none'">
+            <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+    </div>
+}
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+@if (Model.Teacher == null)
+{
+    <div class="px-4 py-3 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-lg flex items-center gap-3">
+        <span class="material-symbols-outlined text-yellow-600">warning</span>
+        <span>Teacher not found.</span>
+    </div>
+    return;
+}
+
+<!-- Personal Information & Workload Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <!-- Personal Information -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border overflow-hidden">
+        <div class="px-6 py-4 bg-primary text-on-primary border-b border-outline-variant/10">
+            <h3 class="text-lg font-semibold">Personal Information</h3>
         </div>
-    }
-
-    @if (Model.Teacher == null)
-    {
-        <div class="alert alert-warning">
-            Teacher not found.
-        </div>
-        return;
-    }
-
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Personal Information</h5>
+        <div class="px-6 py-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Full Name</p>
+                    <p class="text-sm font-medium text-on-surface">@Model.Teacher.FullName</p>
                 </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Full Name</strong></label>
-                            <p>@Model.Teacher.FullName</p>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Employee Code</strong></label>
-                            <p><span class="badge bg-info">@Model.Teacher.EmployeeCode</span></p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Email</strong></label>
-                            <p><a href="mailto:@Model.Teacher.Email">@Model.Teacher.Email</a></p>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Department</strong></label>
-                            <p>@Model.Teacher.Department?.Name</p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Designation</strong></label>
-                            <p>@Model.Teacher.Designation</p>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Max Weekly Hours</strong></label>
-                            <p><span class="badge bg-warning">@Model.Teacher.MaxWeeklyHours hrs</span></p>
-                        </div>
-                    </div>
+                <div>
+                    <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Employee Code</p>
+                    <span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed text-xs font-bold rounded-full inline-block">@Model.Teacher.EmployeeCode</span>
                 </div>
             </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Workload Analysis</h5>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Email</p>
+                    <a href="mailto:@Model.Teacher.Email" class="text-sm text-primary hover:underline">@Model.Teacher.Email</a>
                 </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Current Hours</strong></label>
-                            <p>@Model.CurrentHours.ToString("F1") hrs</p>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label"><strong>Workload %</strong></label>
-                            <p>
-                                @{
-                                    var percentage = (Model.CurrentHours / Model.Teacher.MaxWeeklyHours) * 100;
-                                    var workloadBg = percentage >= 100 ? "bg-danger" : percentage >= 80 ? "bg-warning" : "bg-success";
-                                }
-                                <span class="badge @workloadBg">@percentage.ToString("F0")%</span>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label class="form-label"><strong>Active Semester</strong></label>
-                            <p>@(Model.ActiveSemester?.Name ?? "No active semester")</p>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="progress" style="height: 25px;">
-                                @{
-                                    var progress = Math.Min(percentage, 100);
-                                }
-                                <div class="progress-bar @workloadBg" role="progressbar" style="width: @progress%;" 
-                                     aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">
-                                    @progress.ToString("F0")%
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div>
+                    <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Department</p>
+                    <p class="text-sm font-medium text-on-surface">@Model.Teacher.Department?.Name</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Designation</p>
+                    <p class="text-sm font-medium text-on-surface">@Model.Teacher.Designation</p>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Max Weekly Hours</p>
+                    <span class="px-3 py-1 bg-warning-fixed text-on-warning-fixed text-xs font-bold rounded-full inline-block">@Model.Teacher.MaxWeeklyHours hrs</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Assigned Subjects in Active Semester</h5>
+    <!-- Workload Analysis -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border overflow-hidden">
+        <div class="px-6 py-4 bg-success text-on-success border-b border-outline-variant/10">
+            <h3 class="text-lg font-semibold">Workload Analysis</h3>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
+        <div class="px-6 py-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Current Hours</p>
+                    <p class="text-sm font-medium text-on-surface">@Model.CurrentHours.ToString("F1") hrs</p>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-on-surface-variant uppercase mb-1">Workload %</p>
+                    <p>
+                        @{
+                            var percentage = (Model.CurrentHours / Model.Teacher.MaxWeeklyHours) * 100;
+                            var workloadColor = percentage >= 100 ? "bg-error text-on-error" : percentage >= 80 ? "bg-warning text-on-warning" : "bg-success text-on-success";
+                        }
+                        <span class="px-3 py-1 @workloadColor text-xs font-bold rounded-full inline-block">@percentage.ToString("F0")%</span>
+                    </p>
+                </div>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-on-surface-variant uppercase mb-2">Active Semester</p>
+                <p class="text-sm font-medium text-on-surface">@(Model.ActiveSemester?.Name ?? "No active semester")</p>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-on-surface-variant uppercase mb-2">Workload Progress</p>
+                @{
+                    var progress = Math.Min(percentage, 100);
+                    var progressColorClass = percentage >= 100 ? "bg-error" : percentage >= 80 ? "bg-warning" : "bg-success";
+                }
+                <div class="w-full bg-surface-container-low rounded-full h-2">
+                    <div class="@progressColorClass h-2 rounded-full transition-all" style="width: @progress%"></div>
+                </div>
+                <p class="text-xs text-on-surface-variant mt-2">@progress.ToString("F0")% of @Model.Teacher.MaxWeeklyHours hours</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assigned Subjects Table -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border overflow-hidden mb-6">
+    <div class="flex items-center gap-3 px-8 py-4 bg-surface-container-low/50 border-b border-outline-variant/10">
+        <span class="material-symbols-outlined text-primary">library_books</span>
+        <h3 class="text-lg font-semibold text-on-surface">Assigned Subjects in Active Semester</h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-surface-container-low/50 border-b border-outline-variant/10">
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Subject Code</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Subject Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Credits</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Classes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.AssignedSubjects.Count == 0)
+                {
                     <tr>
-                        <th>Subject Code</th>
-                        <th>Subject Name</th>
-                        <th>Type</th>
-                        <th>Credits</th>
-                        <th>Classes</th>
+                        <td colspan="5" class="px-6 py-8 text-center text-on-surface-variant">
+                            No subjects assigned in active semester.
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @if (Model.AssignedSubjects.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                No subjects assigned in active semester.
-                            </td>
-                        </tr>
-                    }
-                    @foreach (var subject in Model.AssignedSubjects)
-                    {
-                        <tr>
-                            <td><span class="badge bg-info">@subject.Code</span></td>
-                            <td>@subject.Name</td>
-                            <td>
-                                @{
-                                    var typeBg = subject.SubjectType switch
-                                    {
-                                        "Theory" => "bg-primary",
-                                        "Lab" => "bg-danger",
-                                        "Elective" => "bg-warning",
-                                        _ => "bg-secondary"
-                                    };
-                                }
-                                <span class="badge @typeBg">@subject.SubjectType</span>
-                            </td>
-                            <td><span class="badge bg-success">@subject.Credits</span></td>
-                            <td>@(Model.SubjectClassCount.ContainsKey(subject.Id) ? Model.SubjectClassCount[subject.Id] : 0)</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                }
+                @foreach (var subject in Model.AssignedSubjects)
+                {
+                    <tr class="border-t border-outline-variant/10 hover:bg-surface-container-low/30">
+                        <td class="px-6 py-4"><span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed text-xs font-bold rounded-full">@subject.Code</span></td>
+                        <td class="px-6 py-4 font-medium text-on-surface">@subject.Name</td>
+                        <td class="px-6 py-4">
+                            @{
+                                var typeBg = subject.SubjectType switch
+                                {
+                                    "Theory" => "bg-primary-fixed text-on-primary-fixed",
+                                    "Lab" => "bg-error text-on-error",
+                                    "Elective" => "bg-warning-fixed text-on-warning-fixed",
+                                    _ => "bg-surface-container-low text-on-surface"
+                                };
+                            }
+                            <span class="px-3 py-1 @typeBg text-xs font-bold rounded-full inline-block">@subject.SubjectType</span>
+                        </td>
+                        <td class="px-6 py-4"><span class="px-3 py-1 bg-success-fixed text-on-success-fixed text-xs font-bold rounded-full">@subject.Credits</span></td>
+                        <td class="px-6 py-4 text-on-surface">@(Model.SubjectClassCount.ContainsKey(subject.Id) ? Model.SubjectClassCount[subject.Id] : 0)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
+</div>
 
-    <div class="card">
-        <div class="card-header bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Timetable Slots</h5>
-                <button class="btn btn-sm btn-info" data-bs-toggle="collapse" data-bs-target="#slotTable">
-                    <i class="bi bi-eye"></i> Toggle Details
-                </button>
-            </div>
+<!-- Timetable Slots Table -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border overflow-hidden">
+    <div class="flex items-center justify-between px-8 py-4 bg-surface-container-low/50 border-b border-outline-variant/10">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary">schedule</span>
+            <h3 class="text-lg font-semibold text-on-surface">Timetable Slots</h3>
         </div>
-        <div class="table-responsive collapse show" id="slotTable">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
+        <button type="button" class="px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors" 
+                onclick="document.getElementById('slotTable').classList.toggle('hidden')">
+            <span class="material-symbols-outlined inline text-lg align-middle">visibility</span> Toggle Details
+        </button>
+    </div>
+    <div class="overflow-x-auto" id="slotTable">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-surface-container-low/50 border-b border-outline-variant/10">
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Day</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Time</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Subject</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Class</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Room</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.TimetableSlots.Count == 0)
+                {
                     <tr>
-                        <th>Day</th>
-                        <th>Time</th>
-                        <th>Subject</th>
-                        <th>Class</th>
-                        <th>Room</th>
-                        <th>Type</th>
+                        <td colspan="6" class="px-6 py-8 text-center text-on-surface-variant">
+                            No timetable slots assigned.
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @if (Model.TimetableSlots.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                No timetable slots assigned.
-                            </td>
-                        </tr>
-                    }
-                    @foreach (var slot in Model.TimetableSlots.OrderBy(s => s.Day))
-                    {
-                        <tr>
-                            <td><strong>@slot.Day</strong></td>
-                            <td>@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</td>
-                            <td>@(slot.Subject?.Name ?? "N/A")</td>
-                            <td>@(slot.ClassBatch?.BatchName ?? "N/A")</td>
-                            <td>@(slot.Room?.RoomNumber ?? "N/A")</td>
-                            <td>
-                                @{
-                                    var slotTypeBg = slot.SlotType switch
-                                    {
-                                        "Theory" => "bg-primary",
-                                        "Lab" => "bg-danger",
-                                        "Elective" => "bg-warning",
-                                        "GAP" => "bg-secondary",
-                                        _ => "bg-dark"
-                                    };
-                                }
-                                <span class="badge @slotTypeBg">@slot.SlotType</span>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                }
+                @foreach (var slot in Model.TimetableSlots.OrderBy(s => s.Day))
+                {
+                    <tr class="border-t border-outline-variant/10 hover:bg-surface-container-low/30">
+                        <td class="px-6 py-4 font-semibold text-on-surface">@slot.Day</td>
+                        <td class="px-6 py-4 text-on-surface">@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</td>
+                        <td class="px-6 py-4 text-on-surface">@(slot.Subject?.Name ?? "N/A")</td>
+                        <td class="px-6 py-4 text-on-surface">@(slot.ClassBatch?.BatchName ?? "N/A")</td>
+                        <td class="px-6 py-4 text-on-surface">@(slot.Room?.RoomNumber ?? "N/A")</td>
+                        <td class="px-6 py-4">
+                            @{
+                                var slotTypeBg = slot.SlotType switch
+                                {
+                                    "Theory" => "bg-primary-fixed text-on-primary-fixed",
+                                    "Lab" => "bg-error text-on-error",
+                                    "Elective" => "bg-warning-fixed text-on-warning-fixed",
+                                    "GAP" => "bg-surface-container-low text-on-surface",
+                                    _ => "bg-on-surface-variant/20 text-on-surface"
+                                };
+                            }
+                            <span class="px-3 py-1 @slotTypeBg text-xs font-bold rounded-full inline-block">@slot.SlotType</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 </div>

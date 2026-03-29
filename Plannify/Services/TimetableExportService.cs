@@ -1,6 +1,6 @@
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
-using Plannify.Models;
+using Plannify.Domain.Entities;
 
 namespace Plannify.Services;
 
@@ -73,8 +73,8 @@ public class TimetableExportService
             column.Item().Text(title).Bold().FontSize(12);
             column.Item().Row(row =>
             {
-                row.RelativeColumn(1).Text($"Semester: {semester}").FontSize(10);
-                row.RelativeColumn(1).Text($"Academic Year: {academicYear}").FontSize(10);
+                row.RelativeItem(1).Text($"Semester: {semester}").FontSize(10);
+                row.RelativeItem(1).Text($"Academic Year: {academicYear}").FontSize(10);
             });
             column.Item().PaddingBottom(10).LineHorizontal(1);
         });
@@ -187,8 +187,8 @@ public class TimetableExportService
             column.Item().PaddingTop(10).LineHorizontal(1);
             column.Item().Row(row =>
             {
-                row.RelativeColumn(1).Text($"Generated on {DateTime.Now:dd MMM yyyy HH:mm:ss}").FontSize(9).Italic();
-                row.RelativeColumn(1).AlignRight().Text($"Page 1").FontSize(9);
+                row.RelativeItem(1).Text($"Generated on {DateTime.Now:dd MMM yyyy HH:mm:ss}").FontSize(9).Italic();
+                row.RelativeItem(1).AlignRight().Text($"Page 1").FontSize(9);
             });
         });
     }

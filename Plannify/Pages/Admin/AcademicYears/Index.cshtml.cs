@@ -1,41 +1,35 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using Plannify.Data;
-using Plannify.Models;
-using Plannify.Services;
+using Plannify.Application.Contracts;
+using Plannify.Application.DTOs;
 
 namespace Plannify.Pages.Admin.AcademicYears;
 
-[Authorize(Roles = "SuperAdmin")]
 public class IndexModel : PageModel
 {
-    private readonly AppDbContext _dbContext;
-    private readonly AuditService _auditService;
+    private readonly IAcademicYearService _academicYearService;
 
-    public IndexModel(AppDbContext dbContext, AuditService auditService)
+    public IndexModel(IAcademicYearService academicYearService)
     {
-        _dbContext = dbContext;
-        _auditService = auditService;
+        _academicYearService = academicYearService;
     }
 
     [BindProperty]
-    public AcademicYear NewAcademicYear { get; set; } = new();
+    public CreateAcademicYearRequest NewAcademicYear { get; set; } = new();
 
-    public List<AcademicYear> AcademicYears { get; set; } = new();
+    public List<AcademicYearDto> AcademicYears { get; set; } = new();
     public Dictionary<int, int> SemesterCounts { get; set; } = new();
 
     public async Task OnGetAsync()
     {
-        AcademicYears = await _dbContext.AcademicYears
-            .OrderByDescending(ay => ay.YearLabel)
-            .ToListAsync();
+        var result = await _academicYearService.GetAllAsync();
+        if (result.IsSuccess)
+            AcademicYears = result.Value?.ToList() ?? new();
 
         foreach (var year in AcademicYears)
         {
-            var count = await _dbContext.Semesters.CountAsync(s => s.AcademicYearId == year.Id);
-            SemesterCounts[year.Id] = count;
+            SemesterCounts[year.Id] = 0;  // TODO: Get from SemesterService if needed
         }
     }
 
@@ -54,88 +48,26 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        var yearExists = await _dbContext.AcademicYears.AnyAsync(ay => ay.YearLabel == NewAcademicYear.YearLabel);
-        if (yearExists)
+        var result = await _academicYearService.CreateAsync(NewAcademicYear);
+        if (!result.IsSuccess)
         {
-            TempData["Error"] = $"Academic year '{NewAcademicYear.YearLabel}' already exists.";
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to add academic year");
             await OnGetAsync();
             return Page();
         }
 
-        NewAcademicYear.IsActive = false;
-        _dbContext.AcademicYears.Add(NewAcademicYear);
-        await _dbContext.SaveChangesAsync();
-
-        await _auditService.LogAsync("CREATE", "AcademicYear", NewAcademicYear.Id.ToString(),
-            null, $"Year: {NewAcademicYear.YearLabel}, Start: {NewAcademicYear.StartDate}, End: {NewAcademicYear.EndDate}");
-
-        TempData["Success"] = $"Academic year '{NewAcademicYear.YearLabel}' added successfully.";
-        return RedirectToPage();
-    }
-
-    public async Task<IActionResult> OnPostSetActiveAsync(int id)
-    {
-        var academicYear = await _dbContext.AcademicYears.FindAsync(id);
-        if (academicYear == null)
-        {
-            TempData["Error"] = "Academic year not found.";
-            return RedirectToPage();
-        }
-
-        var currentlyActive = await _dbContext.AcademicYears.FirstOrDefaultAsync(ay => ay.IsActive);
-        if (currentlyActive != null)
-        {
-            currentlyActive.IsActive = false;
-            _dbContext.AcademicYears.Update(currentlyActive);
-            await _auditService.LogAsync("UPDATE", "AcademicYear", currentlyActive.Id.ToString(),
-                "IsActive: true", "IsActive: false");
-        }
-
-        academicYear.IsActive = true;
-        _dbContext.AcademicYears.Update(academicYear);
-        await _dbContext.SaveChangesAsync();
-
-        await _auditService.LogAsync("UPDATE", "AcademicYear", academicYear.Id.ToString(),
-            "IsActive: false", "IsActive: true");
-
-        TempData["Success"] = $"Academic year '{academicYear.YearLabel}' is now active.";
+        TempData["Success"] = "Academic Year added successfully.";
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        var academicYear = await _dbContext.AcademicYears.FindAsync(id);
-        if (academicYear == null)
-        {
-            TempData["Error"] = "Academic year not found.";
-            return RedirectToPage();
-        }
+        var result = await _academicYearService.DeleteAsync(id);
+        if (result.IsSuccess)
+            TempData["Success"] = "Academic Year deleted successfully.";
+        else
+            TempData["Error"] = result.ErrorMessage ?? "Failed to delete academic year";
 
-        if (academicYear.IsActive)
-        {
-            TempData["Error"] = "Cannot delete the currently active academic year.";
-            await OnGetAsync();
-            return Page();
-        }
-
-        var semesterCount = await _dbContext.Semesters.CountAsync(s => s.AcademicYearId == id);
-        var classCount = await _dbContext.ClassBatches.CountAsync(c => c.AcademicYearId == id);
-
-        if (semesterCount > 0 || classCount > 0)
-        {
-            TempData["Error"] = $"Cannot delete academic year. It has {semesterCount} semesters and {classCount} classes.";
-            await OnGetAsync();
-            return Page();
-        }
-
-        var yearLabel = academicYear.YearLabel;
-        _dbContext.AcademicYears.Remove(academicYear);
-        await _dbContext.SaveChangesAsync();
-
-        await _auditService.LogAsync("DELETE", "AcademicYear", id.ToString(),
-            $"Year: {yearLabel}", null);
-
-        TempData["Success"] = $"Academic year '{yearLabel}' deleted successfully.";
         return RedirectToPage();
     }
 }

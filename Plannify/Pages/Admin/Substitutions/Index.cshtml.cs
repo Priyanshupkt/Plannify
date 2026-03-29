@@ -3,30 +3,32 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
-using Plannify.Services;
+using Plannify.Domain.Entities;
 using System.Text.Json;
 
 namespace Plannify.Pages.Admin.Substitutions;
 
-[Authorize(Roles = "Admin,HOD")]
+[Authorize(Roles = "Admin")]
 public class IndexModel : PageModel
 {
     private readonly AppDbContext _context;
-    private readonly AuditService _auditService;
+    private readonly ISubstitutionService _substitutionService;
+    private readonly ITimetableSlotService _timetableSlotService;
 
-    public IndexModel(AppDbContext context, AuditService auditService)
+    public IndexModel(AppDbContext context, ISubstitutionService substitutionService, ITimetableSlotService timetableSlotService)
     {
         _context = context;
-        _auditService = auditService;
+        _substitutionService = substitutionService;
+        _timetableSlotService = timetableSlotService;
     }
 
     [BindProperty]
     public SubstitutionInput Input { get; set; } = new();
 
     public List<SelectListItem> Teachers { get; set; } = new();
-    public List<SubstitutionRecord> SubstitutionHistory { get; set; } = new();
+    public List<Substitution> SubstitutionHistory { get; set; } = new();
 
     public class SubstitutionInput
     {
@@ -110,7 +112,7 @@ public class IndexModel : PageModel
         return new JsonResult(availableTeachers);
     }
 
-    public async Task<IActionResult> OnPostAssignAsync()
+    public async Task<IActionResult> OnPostAddAsync()
     {
         if (!ModelState.IsValid)
         {
@@ -146,7 +148,7 @@ public class IndexModel : PageModel
         }
 
         // Check for existing substitution on same date/slot
-        var existingSubstitution = await _context.SubstitutionRecords
+        var existingSubstitution = await _context.Substitutions
             .AnyAsync(s => s.TimetableSlotId == Input.TimetableSlotId && s.Date == Input.Date);
 
         if (existingSubstitution)
@@ -157,55 +159,56 @@ public class IndexModel : PageModel
         }
 
         // Create substitution record
-        var substitution = new SubstitutionRecord
+        var substitution = new Substitution
         {
             TimetableSlotId = Input.TimetableSlotId,
             OriginalTeacherId = Input.AbsentTeacherId,
             SubstituteTeacherId = Input.SubstituteTeacherId,
             Date = Input.Date,
             Reason = Input.Reason,
-            ApprovedBy = User.Identity?.Name ?? "System"
+            CreatedAt = DateTime.UtcNow
         };
 
-        _context.SubstitutionRecords.Add(substitution);
+        _context.Substitutions.Add(substitution);
         await _context.SaveChangesAsync();
 
-        // Audit log
-        await _auditService.LogAsync(
-            "CREATE",
-            "SubstitutionRecord",
-            substitution.Id.ToString(),
-            null,
-            JsonSerializer.Serialize(new
-            {
-                substitution.Date,
-                Original = Input.AbsentTeacherId,
-                Substitute = Input.SubstituteTeacherId,
-                substitution.Reason
-            }));
+        // TODO: Add audit logging via service
+        // await _auditService.LogAsync(
+        //     "CREATE",
+        //     "SubstitutionRecord",
+        //     substitution.Id.ToString(),
+        //     null,
+        //     JsonSerializer.Serialize(new
+        //     {
+        //         substitution.Date,
+        //         Original = Input.AbsentTeacherId,
+        //         Substitute = Input.SubstituteTeacherId,
+        //         substitution.Reason
+        //     }));
 
-        TempData["Success"] = "Substitution assigned successfully.";
+        TempData["Success"] = "Substitution recorded.";
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        var substitution = await _context.SubstitutionRecords
+        var substitution = await _context.Substitutions
             .Include(s => s.TimetableSlot)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (substitution == null)
             return NotFound();
 
-        _context.SubstitutionRecords.Remove(substitution);
+        _context.Substitutions.Remove(substitution);
         await _context.SaveChangesAsync();
 
-        await _auditService.LogAsync(
-            "DELETE",
-            "SubstitutionRecord",
-            id.ToString(),
-            JsonSerializer.Serialize(new { substitution.Date }),
-            null);
+        // TODO: Add audit logging via service
+        // await _auditService.LogAsync(
+        //     "DELETE",
+        //     "SubstitutionRecord",
+        //     id.ToString(),
+        //     JsonSerializer.Serialize(new { substitution.Date }),
+        //     null);
 
         TempData["Success"] = "Substitution deleted successfully.";
         return RedirectToPage();
@@ -213,13 +216,15 @@ public class IndexModel : PageModel
 
     private async Task LoadHistoryAsync()
     {
-        SubstitutionHistory = await _context.SubstitutionRecords
-            .Include(s => s.OriginalTeacher)
-            .Include(s => s.SubstituteTeacher)
-            .Include(s => s.TimetableSlot)
-            .ThenInclude(s => s.Subject)
-            .Include(s => s.TimetableSlot)
-            .ThenInclude(s => s.ClassBatch)
+        if (_context == null) return;
+
+        SubstitutionHistory = await _context.Substitutions
+            .Include(s => s.OriginalTeacher!)
+            .Include(s => s.SubstituteTeacher!)
+            .Include(s => s.TimetableSlot!)
+            .ThenInclude(s => s!.Subject)
+            .Include(s => s.TimetableSlot!)
+            .ThenInclude(s => s!.ClassBatch)
             .OrderByDescending(s => s.Date)
             .Take(50)
             .ToListAsync();

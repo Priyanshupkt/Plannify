@@ -1,402 +1,219 @@
 @page "/Admin/Dashboard"
 @model Plannify.Pages.Admin.DashboardModel
 @{
-    ViewData["Title"] = "Admin Dashboard";
-    ViewData["PageTitle"] = "Dashboard";
-    ViewData["ActiveNav"] = "Dashboard";
-    Layout = "_AdminLayout";
+    ViewData["Title"] = "Dashboard";
+    ViewData["Section"] = "Overview";
+    Layout = "/Pages/Shared/_Layout.cshtml";
 }
 
-<!-- Alerts Section -->
-@if (Model.Alerts != null && Model.Alerts.Any())
-{
-    @foreach (var alert in Model.Alerts)
-    {
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            @alert
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-}
-
-<!-- ROW 1: Stat Cards (Teachers, Classes, Subjects, Rooms) -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card stat-card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-white-50 mb-2">Total Teachers</h6>
-                        <h3 class="mb-0">@Model.TotalTeachers</h3>
-                    </div>
-                    <i class="fas fa-users fa-3x opacity-50"></i>
-                </div>
+<!-- Stat Cards Grid (2 rows of 4) -->
+<div class="grid grid-cols-4 gap-4 mb-8">
+    <!-- Teachers -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 border-l-4 border-primary">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm text-on-surface-variant mb-1">Total Teachers</p>
+                <h3 class="text-3xl font-bold text-on-surface">@Model.TotalTeachers</h3>
             </div>
+            <span class="material-symbols-outlined text-4xl text-primary/30">group</span>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card stat-card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-white-50 mb-2">Total Classes</h6>
-                        <h3 class="mb-0">@Model.TotalClasses</h3>
-                    </div>
-                    <i class="fas fa-chalkboard fa-3x opacity-50"></i>
-                </div>
+    <!-- Classes -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 border-l-4 border-success">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm text-on-surface-variant mb-1">Total Classes</p>
+                <h3 class="text-3xl font-bold text-on-surface">@Model.TotalClasses</h3>
             </div>
+            <span class="material-symbols-outlined text-4xl text-success/30">school</span>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card stat-card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-white-50 mb-2">Total Subjects</h6>
-                        <h3 class="mb-0">@Model.TotalSubjects</h3>
-                    </div>
-                    <i class="fas fa-book fa-3x opacity-50"></i>
-                </div>
+    <!-- Subjects -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 border-l-4 border-info">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm text-on-surface-variant mb-1">Total Subjects</p>
+                <h3 class="text-3xl font-bold text-on-surface">@Model.TotalSubjects</h3>
             </div>
+            <span class="material-symbols-outlined text-4xl text-info/30">library_books</span>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card stat-card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-white-50 mb-2">Active Rooms</h6>
-                        <h3 class="mb-0">@Model.ActiveRooms</h3>
-                    </div>
-                    <i class="fas fa-door-open fa-3x opacity-50"></i>
-                </div>
+    <!-- Rooms -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 border-l-4 border-tertiary">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm text-on-surface-variant mb-1">Active Rooms</p>
+                <h3 class="text-3xl font-bold text-on-surface">@Model.ActiveRooms</h3>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- ROW 2: Stat Cards (Slots, Conflicts, Substitutions, Overloaded) -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card stat-card bg-teal text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-white-50 mb-2">Total Slots</h6>
-                        <h3 class="mb-0">@Model.TotalSlots</h3>
-                    </div>
-                    <i class="fas fa-th fa-3x opacity-50"></i>
-                </div>
-            </div>
+            <span class="material-symbols-outlined text-4xl text-tertiary/30">meeting_room</span>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card stat-card @(Model.ConflictCount > 0 ? "bg-danger" : "bg-success") text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-white-50 mb-2">Active Conflicts</h6>
-                        <h3 class="mb-0">@Model.ConflictCount</h3>
-                    </div>
-                    <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
-                </div>
+    <!-- Slots -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 border-l-4 border-primary-fixed">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm text-on-surface-variant mb-1">Total Slots</p>
+                <h3 class="text-3xl font-bold text-on-surface">@Model.TotalSlots</h3>
             </div>
+            <span class="material-symbols-outlined text-4xl text-primary-fixed/30">grid_on</span>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card stat-card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-white-50 mb-2">Pending Substitutions</h6>
-                        <h3 class="mb-0">@Model.PendingSubstitutions</h3>
-                    </div>
-                    <i class="fas fa-exchange-alt fa-3x opacity-50"></i>
-                </div>
+    <!-- Conflicts -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 border-l-4 @(Model.ConflictCount > 0 ? "border-error" : "border-success")">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm text-on-surface-variant mb-1">Conflicts</p>
+                <h3 class="text-3xl font-bold @(Model.ConflictCount > 0 ? "text-error" : "text-success")">@Model.ConflictCount</h3>
             </div>
+            <span class="material-symbols-outlined text-4xl @(Model.ConflictCount > 0 ? "text-error/30" : "text-success/30")">@(Model.ConflictCount > 0 ? "warning" : "check_circle")</span>
         </div>
     </div>
 
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card stat-card @(Model.OverloadedTeachersCount > 0 ? "bg-danger" : "bg-success") text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-white-50 mb-2">Overloaded Teachers</h6>
-                        <h3 class="mb-0">@Model.OverloadedTeachersCount</h3>
-                    </div>
-                    <i class="fas fa-hourglass-end fa-3x opacity-50"></i>
-                </div>
+    <!-- Substitutions -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 border-l-4 border-warning">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm text-on-surface-variant mb-1">Pending Substitutions</p>
+                <h3 class="text-3xl font-bold text-on-surface">@Model.PendingSubstitutions</h3>
             </div>
+            <span class="material-symbols-outlined text-4xl text-warning/30">people_alt</span>
+        </div>
+    </div>
+
+    <!-- Overloaded Teachers -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 border-l-4 @(Model.OverloadedTeachersCount > 0 ? "border-error" : "border-on-surface-variant/20")">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-sm text-on-surface-variant mb-1">Overloaded Teachers</p>
+                <h3 class="text-3xl font-bold @(Model.OverloadedTeachersCount > 0 ? "text-error" : "text-on-surface")">@Model.OverloadedTeachersCount</h3>
+            </div>
+            <span class="material-symbols-outlined text-4xl @(Model.OverloadedTeachersCount > 0 ? "text-error/30" : "text-on-surface-variant/20")">trending_up</span>
         </div>
     </div>
 </div>
 
-<!-- ROW 3: Charts -->
-<div class="row mb-4">
-    <div class="col-lg-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Teacher Workload Distribution</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="teacherWorkloadChart" height="300"></canvas>
+<!-- Quick Actions -->
+<div class="grid grid-cols-3 gap-4">
+    <a href="/Admin/Timetable/Create" class="bg-primary text-on-primary rounded-2xl p-6 hover:shadow-lg transition-shadow">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-3xl">add_circle</span>
+            <div>
+                <h4 class="font-semibold">Create Slot</h4>
+                <p class="text-sm opacity-90">Add new timetable entry</p>
             </div>
         </div>
-    </div>
+    </a>
 
-    <div class="col-lg-6 mb-4">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Room Utilization Rate</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="roomUtilizationChart" height="300"></canvas>
+    <a href="/Admin/Timetable/Conflicts" class="@(Model.ConflictCount > 0 ? "bg-error text-on-error" : "bg-success text-on-success") rounded-2xl p-6 hover:shadow-lg transition-shadow">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-3xl">@(Model.ConflictCount > 0 ? "warning" : "check_circle")</span>
+            <div>
+                <h4 class="font-semibold">View Conflicts</h4>
+                <p class="text-sm opacity-90">@(Model.ConflictCount > 0 ? $"{Model.ConflictCount} conflicts found" : "No conflicts")</p>
             </div>
         </div>
-    </div>
+    </a>
+
+    <a href="/Admin/Substitutions" class="bg-tertiary text-on-tertiary rounded-2xl p-6 hover:shadow-lg transition-shadow">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-3xl">assignment</span>
+            <div>
+                <h4 class="font-semibold">Substitutions</h4>
+                <p class="text-sm opacity-90">@(Model.PendingSubstitutions > 0 ? $"{Model.PendingSubstitutions} pending" : "Manage teacher substitutions")</p>
+            </div>
+        </div>
+    </a>
 </div>
 
-<!-- ROW 4: Quick Actions -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="fas fa-flash"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 mb-2">
-                        <a href="/Admin/Timetable/Create" class="btn btn-primary w-100">
-                            <i class="fas fa-plus"></i> Add Slot
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="/Admin/Timetable/Conflicts" class="btn btn-warning w-100">
-                            <i class="fas fa-search"></i> Run Scan
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <a href="/Admin/Substitutions" class="btn btn-info w-100">
-                            <i class="fas fa-exchange-alt"></i> Substitutions
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <button class="btn btn-secondary w-100" disabled title="Coming Soon">
-                            <i class="fas fa-download"></i> Export Master
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- ROW 5: Recent Activity & Overloaded Teachers -->
-<div class="row">
-    <div class="col-lg-8 mb-4">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>Time</th>
-                            <th>Action</th>
-                            <th>Entity</th>
-                            <th>Details</th>
-                            <th>By</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.RecentActivity != null && Model.RecentActivity.Any())
+<!-- Analytics & Activity Section -->
+<div class="grid grid-cols-2 gap-6 mt-8">
+    <!-- Recent Activity -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border overflow-hidden">
+        <div class="flex items-center gap-3 px-8 py-4 bg-surface-container-low/50 border-b border-outline-variant/10">
+            <span class="material-symbols-outlined text-primary">history</span>
+            <h3 class="text-lg font-semibold text-on-surface">Recent Activity</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-surface-container-low/50 border-b border-outline-variant/10">
+                        <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Action</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Entity</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.RecentActivity != null && Model.RecentActivity.Any())
+                    {
+                        @foreach (var activity in Model.RecentActivity)
                         {
-                            @foreach (var activity in Model.RecentActivity)
-                            {
-                                <tr>
-                                    <td><small>@activity.PerformedAt.ToString("g")</small></td>
-                                    <td>
-                                        <span class="badge bg-secondary">@activity.Action</span>
-                                    </td>
-                                    <td>@activity.EntityName</td>
-                                    <td><small class="text-muted">ID: @activity.EntityId</small></td>
-                                    <td>@activity.PerformedBy</td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-3">No recent activity</td>
+                            <tr class="border-t border-outline-variant/10 hover:bg-surface-container-low/30">
+                                <td class="px-6 py-3 text-xs text-on-surface-variant">@activity.PerformedAt.ToString("g")</td>
+                                <td class="px-6 py-3"><span class="px-2 py-1 bg-primary-fixed text-on-primary-fixed text-xs font-bold rounded-full">@activity.Action</span></td>
+                                <td class="px-6 py-3 text-sm text-on-surface">@activity.EntityName</td>
+                                <td class="px-6 py-3 text-sm text-on-surface">@activity.PerformedBy</td>
                             </tr>
                         }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-on-surface-variant">No recent activity</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <div class="col-lg-4 mb-4">
-        <div class="card">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0"><i class="fas fa-exclamation-circle"></i> Overloaded Teachers</h5>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>Teacher</th>
-                            <th>Hours</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.OverloadedTeachers != null && Model.OverloadedTeachers.Any())
+    <!-- Overloaded Teachers -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border overflow-hidden">
+        <div class="flex items-center gap-3 px-8 py-4 bg-surface-container-low/50 border-b border-outline-variant/10">
+            <span class="material-symbols-outlined text-error">warning</span>
+            <h3 class="text-lg font-semibold text-on-surface">Overloaded Teachers</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-surface-container-low/50 border-b border-outline-variant/10">
+                        <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Teacher</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-on-surface-variant uppercase">Hours</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.OverloadedTeachers != null && Model.OverloadedTeachers.Any())
+                    {
+                        @foreach (var teacher in Model.OverloadedTeachers.Take(8))
                         {
-                            @foreach (var teacher in Model.OverloadedTeachers.Take(8))
-                            {
-                                <tr>
-                                    <td>@teacher.TeacherName</td>
-                                    <td>
-                                        <span class="badge bg-danger">@teacher.MaxHours</span>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="2" class="text-center text-muted py-3"><small>No overloaded teachers</small></td>
+                            <tr class="border-t border-outline-variant/10 hover:bg-surface-container-low/30">
+                                <td class="px-6 py-3 text-sm text-on-surface">@teacher.TeacherName</td>
+                                <td class="px-6 py-3"><span class="px-2 py-1 bg-error text-on-error text-xs font-bold rounded-full">@teacher.MaxHours</span></td>
                             </tr>
                         }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="2" class="px-6 py-8 text-center text-on-surface-variant">No overloaded teachers</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @* Chart.js now installed globally if needed for future charts *@
     <script>
-        // Parse chart data from ViewData
-        const teacherWorkloadData = @Html.Raw(Model.TeacherWorkloadChartData ?? "[]");
-        const roomUtilizationData = @Html.Raw(Model.RoomUtilizationChartData ?? "[]");
-
-        // Initialize Teacher Workload Chart (Bar)
-        if (teacherWorkloadData.length > 0) {
-            const ctx1 = document.getElementById('teacherWorkloadChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: teacherWorkloadData.map(d => d.name),
-                    datasets: [
-                        {
-                            label: 'Actual Hours',
-                            data: teacherWorkloadData.map(d => d.actual),
-                            backgroundColor: '#0066cc',
-                            borderColor: '#004499',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Max Hours',
-                            data: teacherWorkloadData.map(d => d.max),
-                            backgroundColor: '#e9ecef',
-                            borderColor: '#999999',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Hours per Week'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Initialize Room Utilization Chart (Doughnut)
-        if (roomUtilizationData.length > 0) {
-            const ctx2 = document.getElementById('roomUtilizationChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: roomUtilizationData.map(d => `${d.name} (${d.utilization.toFixed(0)}%)`),
-                    datasets: [{
-                        data: roomUtilizationData.map(d => d.utilization),
-                        backgroundColor: [
-                            '#2ecc71',
-                            '#3498db',
-                            '#e74c3c',
-                            '#f39c12',
-                            '#9b59b6'
-                        ],
-                        borderColor: '#fff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'right'
-                        }
-                    }
-                }
-            });
-        }
-
-        // Auto-dismiss alerts
-        document.querySelectorAll('.alert').forEach(alert => {
-            setTimeout(() => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }, 5000);
-        });
+        // Auto-dismiss alerts after 4 seconds
+        window.flashAlerts?.init();
     </script>
-
-    <style>
-        .stat-card {
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .bg-teal {
-            background-color: #17a2b8 !important;
-        }
-
-        .card-header {
-            font-weight: 600;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-    </style>
 }

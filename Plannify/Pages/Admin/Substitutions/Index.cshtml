@@ -1,128 +1,119 @@
 @page "/Admin/Substitutions"
 @model Plannify.Pages.Admin.Substitutions.IndexModel
 @{
-    ViewData["Title"] = "Manage Substitutions";
+    ViewData["Title"] = "Substitutions";
+    ViewData["Section"] = "Master Data";
+    Layout = "/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid mt-4">
-    <h2 class="mb-4">Record Substitution</h2>
+<!-- Record Substitution Form -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border p-6 mb-8">
+    <div class="flex items-center gap-3 mb-6">
+        <span class="material-symbols-outlined text-primary">person_add</span>
+        <h3 class="text-lg font-semibold text-on-surface">Record Substitution</h3>
+    </div>
+    
+    <form method="post" asp-page-handler="Assign" class="grid grid-cols-3 gap-4">
+        @Html.AntiForgeryToken()
+        
+        <div>
+            <label for="date" class="block text-sm font-medium text-on-surface mb-2">Date</label>
+            <input type="date" class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" id="date" asp-for="Input.Date" required onchange="loadAbsentTeacherSlots()">
+        </div>
+        
+        <div>
+            <label for="absentTeacherId" class="block text-sm font-medium text-on-surface mb-2">Absent Teacher</label>
+            <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" id="absentTeacherId" asp-for="Input.AbsentTeacherId" asp-items="Model.Teachers" required onchange="loadAbsentTeacherSlots()">
+                <option value="">-- Select Teacher --</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="substituteTeacherId" class="block text-sm font-medium text-on-surface mb-2">Substitute Teacher</label>
+            <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" id="substituteTeacherId" asp-for="Input.SubstituteTeacherId" required>
+                <option value="">-- Select Substitute --</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="slotId" class="block text-sm font-medium text-on-surface mb-2">Slot</label>
+            <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" id="slotId" name="slotId">
+                <option value="">-- Select Slot --</option>
+            </select>
+        </div>
+        
+        <div>
+            <label for="reason" class="block text-sm font-medium text-on-surface mb-2">Reason</label>
+            <input type="text" class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none" id="reason" asp-for="Input.Reason" placeholder="Medical leave, Conference..." />
+        </div>
+        
+        <div class="flex items-end">
+            <button type="submit" class="w-full px-6 py-3 bg-primary text-on-primary font-medium rounded-xl hover:shadow-md transition-shadow">
+                <span class="material-symbols-outlined align-middle">add_circle</span> Record
+            </button>
+        </div>
+    </form>
+</div>
 
-    @if (TempData["Success"] != null)
+<!-- Substitution History -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm ghost-border overflow-hidden">
+    <div class="flex items-center gap-3 px-8 py-4 bg-surface-container-low/50 border-b border-outline-variant/10">
+        <span class="material-symbols-outlined text-primary">history</span>
+        <h3 class="text-lg font-semibold text-on-surface">Substitution History</h3>
+        <div class="ml-auto text-slate-500 text-sm">@Model.SubstitutionHistory.Count record(s)</div>
+    </div>
+    
+    @if (Model.SubstitutionHistory.Count > 0)
     {
-        <div class="alert alert-success alert-dismissible fade show">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-surface-container-low/50 border-b border-outline-variant/10">
+                        <th class="px-8 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Date</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Absent Teacher</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Slot</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Subject</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Class</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Substitute</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Reason</th>
+                        <th class="px-4 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sub in Model.SubstitutionHistory)
+                    {
+                        <tr class="hover:bg-surface-container-low/30 transition-colors group border-t border-outline-variant/10">
+                            <td class="px-8 py-5 text-sm text-on-surface">@sub.Date.ToString("dd MMM yyyy")</td>
+                            <td class="px-4 py-5 text-sm font-medium text-on-surface">@sub.OriginalTeacher?.FullName</td>
+                            <td class="px-4 py-5 text-sm text-on-surface">@sub.TimetableSlot?.StartTime.ToString("HH:mm") – @sub.TimetableSlot?.EndTime.ToString("HH:mm")</td>
+                            <td class="px-4 py-5 text-sm text-on-surface">@sub.TimetableSlot?.Subject?.Name</td>
+                            <td class="px-4 py-5 text-sm text-on-surface">@sub.TimetableSlot?.ClassBatch?.BatchName</td>
+                            <td class="px-4 py-5 text-sm font-medium text-on-surface">@sub.SubstituteTeacher?.FullName</td>
+                            <td class="px-4 py-5 text-sm text-on-surface-variant">@sub.Reason</td>
+                            <td class="px-4 py-5">
+                                <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <form method="post" asp-page-handler="Delete" style="display: inline;">
+                                        <input type="hidden" name="id" value="@sub.Id">
+                                        <button type="submit" class="p-2 rounded-lg hover:bg-error/10 text-error transition-colors" onclick="return confirm('Delete this record?')">
+                                            <span class="material-symbols-outlined text-lg">delete</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     }
-
-    <!-- Substitution Form -->
-    <div class="row mb-5">
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <form method="post" asp-page-handler="Assign">
-                        @Html.AntiForgeryToken()
-
-                        <div class="mb-3">
-                            <label for="date" class="form-label">Date</label>
-                            <input type="date" class="form-control" id="date" asp-for="Input.Date" required onchange="loadAbsentTeacherSlots()">
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="absentTeacherId" class="form-label">Absent Teacher</label>
-                            <select class="form-select" id="absentTeacherId" asp-for="Input.AbsentTeacherId" asp-items="Model.Teachers" required onchange="loadAbsentTeacherSlots()">
-                                <option value="">-- Select Teacher --</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3" id="slotsContainer" style="display: none;">
-                            <label class="form-label">Select Slot</label>
-                            <div id="slotsList"></div>
-                        </div>
-
-                        <div class="mb-3" style="display: none;" id="substitutesContainer">
-                            <label for="substituteTeacherId" class="form-label">Available Substitutes</label>
-                            <select class="form-select" id="substituteTeacherId" asp-for="Input.SubstituteTeacherId" required>
-                                <option value="">-- Select Substitute --</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="reason" class="form-label">Reason</label>
-                            <textarea class="form-control" id="reason" asp-for="Input.Reason" rows="3" placeholder="e.g., Medical leave, Conference attendance"></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="approvedBy" class="form-label">Approved By</label>
-                            <input type="text" class="form-control" id="approvedBy" asp-for="Input.ApprovedBy" value="@User.Identity?.Name" readonly>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" disabled>
-                            Assign Substitute
-                        </button>
-                    </form>
-                </div>
-            </div>
+    else
+    {
+        <div class="flex flex-col items-center justify-center py-12 px-8">
+            <span class="material-symbols-outlined text-4xl text-on-surface-variant/50 mb-3">inbox</span>
+            <p class="text-on-surface-variant text-center">No substitution records found.</p>
         </div>
-    </div>
-
-    <!-- History Table -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Substitution History</h6>
-                </div>
-                <div class="card-body">
-                    @if (Model.SubstitutionHistory.Count > 0)
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Absent Teacher</th>
-                                        <th>Slot</th>
-                                        <th>Subject</th>
-                                        <th>Class</th>
-                                        <th>Substitute</th>
-                                        <th>Reason</th>
-                                        <th>Recorded By</th>
-                                        <th class="text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var sub in Model.SubstitutionHistory)
-                                    {
-                                        <tr>
-                                            <td>@sub.Date:d</td>
-                                            <td><strong>@sub.OriginalTeacher?.FullName</strong></td>
-                                            <td>@sub.TimetableSlot?.StartTime:HH:mm – @sub.TimetableSlot?.EndTime:HH:mm</td>
-                                            <td>@sub.TimetableSlot?.Subject?.Name</td>
-                                            <td>@sub.TimetableSlot?.ClassBatch?.BatchName</td>
-                                            <td>@sub.SubstituteTeacher?.FullName</td>
-                                            <td>@sub.Reason</td>
-                                            <td><small>@sub.ApprovedBy</small></td>
-                                            <td class="text-center">
-                                                <form method="post" asp-page-handler="Delete" style="display: inline;">
-                                                    <input type="hidden" name="id" value="@sub.Id">
-                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this record?')">Delete</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted">No substitution records found.</p>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
+    }
+</div>
 </div>
 
 @section Scripts {

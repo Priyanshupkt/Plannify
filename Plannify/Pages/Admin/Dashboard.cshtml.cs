@@ -1,23 +1,32 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
-using Plannify.Services;
+using Plannify.Domain.Entities;
 using System.Text.Json;
 
 namespace Plannify.Pages.Admin;
 
-[Authorize(Roles = "Admin,HOD")]
 public class DashboardModel : PageModel
 {
     private readonly AppDbContext _context;
-    private readonly ConflictDetector _conflictDetector;
+    private readonly IConflictDetectorService _conflictDetector;
+    private readonly ISubstitutionService _substitutionService;
+    private readonly ISemesterService _semesterService;
+    private readonly ITeacherService _teacherService;
 
-    public DashboardModel(AppDbContext context, ConflictDetector conflictDetector)
+    public DashboardModel(
+        AppDbContext context,
+        IConflictDetectorService conflictDetector,
+        ISubstitutionService substitutionService,
+        ISemesterService semesterService,
+        ITeacherService teacherService)
     {
         _context = context;
         _conflictDetector = conflictDetector;
+        _substitutionService = substitutionService;
+        _semesterService = semesterService;
+        _teacherService = teacherService;
     }
 
     // Statistics
@@ -61,8 +70,16 @@ public class DashboardModel : PageModel
             ConflictCount = (await _conflictDetector.GetAllConflictsAsync(activeSemester.Id)).Count;
         }
 
-        PendingSubstitutions = await _context.SubstitutionRecords
-            .CountAsync(s => s.Date >= DateOnly.FromDateTime(DateTime.Now.AddDays(-7)));
+        // Get pending substitutions using the service
+        var activeSubstitutions = await _substitutionService.GetActiveAsync();
+        if (activeSubstitutions.IsSuccess)
+        {
+            // Count substitutions from the past week to today
+            var oneWeekAgo = DateOnly.FromDateTime(DateTime.Now.AddDays(-7));
+            PendingSubstitutions = activeSubstitutions.Value
+                ?.Where(s => s.Date >= oneWeekAgo)
+                .Count() ?? 0;
+        }
 
         // Load teacher workload for chart
         await LoadTeacherWorkloadChartAsync();

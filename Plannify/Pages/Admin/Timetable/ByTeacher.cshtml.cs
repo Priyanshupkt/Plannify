@@ -1,27 +1,33 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
+using Plannify.Domain.Entities;
+using Plannify.Services;
 
 namespace Plannify.Pages.Admin.Timetable;
 
-[Authorize(Roles = "Admin,HOD")]
 public class ByTeacherModel : PageModel
 {
     private readonly AppDbContext _context;
+    private readonly PdfExportService _pdfService;
+    private readonly ITeacherService _teacherService;
+    private readonly ISemesterService _semesterService;
 
-    public ByTeacherModel(AppDbContext context)
+    public ByTeacherModel(AppDbContext context, PdfExportService pdfService, ITeacherService teacherService, ISemesterService semesterService)
     {
         _context = context;
+        _pdfService = pdfService;
+        _teacherService = teacherService;
+        _semesterService = semesterService;
     }
 
     public List<SelectListItem> Teachers { get; set; } = new();
     public List<SelectListItem> Semesters { get; set; } = new();
 
-    public Plannify.Models.Teacher? CurrentTeacher { get; set; }
+    public Teacher? CurrentTeacher { get; set; }
     public Semester? CurrentSemester { get; set; }
     public Dictionary<string, Dictionary<string, TimetableSlot?>> Grid { get; set; } = new();
     public List<string> Days { get; set; } = new();
@@ -62,17 +68,17 @@ public class ByTeacherModel : PageModel
         Days = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
         MaxWeeklyHours = CurrentTeacher?.MaxWeeklyHours ?? 18;
 
-        // Get unique time ranges across all slots
+        // Get unique time ranges across all slots — format as "HH:mm – HH:mm", sorted
         var timeSlots = slots
             .Select(s => (s.StartTime, s.EndTime))
             .Distinct()
             .OrderBy(t => t.StartTime)
-            .Select(t => $"{t.StartTime:HH:mm}-{t.EndTime:HH:mm}")
+            .Select(t => $"{t.StartTime:HH:mm} – {t.EndTime:HH:mm}")
             .ToList();
 
         TimeRanges = timeSlots;
 
-        // Build grid dictionary
+        // Build grid dictionary: [Day][TimeRange] = slot or null
         Grid = new();
         foreach (var day in Days)
         {
@@ -86,7 +92,7 @@ public class ByTeacherModel : PageModel
         // Fill grid with slots
         foreach (var slot in slots)
         {
-            var timeRange = $"{slot.StartTime:HH:mm}-{slot.EndTime:HH:mm}";
+            var timeRange = $"{slot.StartTime:HH:mm} – {slot.EndTime:HH:mm}";
             if (Grid.ContainsKey(slot.Day) && Grid[slot.Day].ContainsKey(timeRange))
             {
                 Grid[slot.Day][timeRange] = slot;
@@ -141,5 +147,30 @@ public class ByTeacherModel : PageModel
     {
         // Placeholder for PDF export
         return RedirectToPage(new { teacherId, semesterId });
+    }
+
+    public async Task<IActionResult> OnPostExportPdfAsync(int teacherId, int semesterId)
+    {
+        var teacher = await _context.Teachers.FindAsync(teacherId);
+        var semester = await _context.Semesters
+            .Include(s => s.AcademicYear)
+            .FirstOrDefaultAsync(s => s.Id == semesterId);
+
+        if (teacher == null || semester == null)
+            return NotFound();
+
+        CurrentTeacher = teacher;
+        CurrentSemester = semester;
+        await BuildGridAsync(teacherId, semesterId);
+
+        var fileName = $"Timetable_{teacher.FullName}_{semester.Name}_{DateTime.Now:yyyy-MM-dd}.pdf";
+        var bytes = _pdfService.GenerateTeacherTimetablePdf(
+            teacher.FullName,
+            semester.Name,
+            Days,
+            TimeRanges,
+            Grid);
+
+        return File(bytes, "application/pdf", fileName);
     }
 }

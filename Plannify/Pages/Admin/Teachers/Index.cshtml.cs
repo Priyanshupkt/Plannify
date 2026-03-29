@@ -1,149 +1,172 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using Plannify.Data;
-using Plannify.Models;
-using Plannify.Services;
+using Plannify.Application.Contracts;
+using Plannify.Application.DTOs;
 
 namespace Plannify.Pages.Admin.Teachers;
 
-[Authorize(Roles = "SuperAdmin")]
+/// <summary>
+/// Refactored Teachers page model
+/// ✅ No DbContext injection
+/// ✅ No data access code
+/// ✅ Only presentation concerns
+/// ✅ Delegates to application service
+/// </summary>
+[Authorize]
 public class IndexModel : PageModel
 {
-    private readonly AppDbContext _dbContext;
-    private readonly AuditService _auditService;
+    private readonly ITeacherService _teacherService;
+    private readonly IDepartmentService _departmentService;
 
-    public IndexModel(AppDbContext dbContext, AuditService auditService)
-    {
-        _dbContext = dbContext;
-        _auditService = auditService;
-    }
+    // ✅ Only DTOs, no entities
+    public List<TeacherDto> Teachers { get; set; } = new();
+    public List<DepartmentDto> Departments { get; set; } = new();
+    public Dictionary<int, decimal> TeacherWorkloads { get; set; } = new();  // For backward compatibility
+    
+    [BindProperty]
+    public CreateTeacherRequest NewTeacher { get; set; } = new();
 
     [BindProperty]
-    public Plannify.Models.Teacher NewTeacher { get; set; } = new();
+    public UpdateTeacherRequest EditTeacher { get; set; } = new();
 
-    public List<Plannify.Models.Teacher> Teachers { get; set; } = new();
-    public List<Department> Departments { get; set; } = new();
-    public Dictionary<int, decimal> TeacherWorkloads { get; set; } = new();
+    public string? SuccessMessage { get; set; }
+    public string? ErrorMessage { get; set; }
 
-    public async Task OnGetAsync()
+    public IndexModel(
+        ITeacherService teacherService,
+        IDepartmentService departmentService)
     {
-        Teachers = await _dbContext.Teachers.Include(t => t.Department).ToListAsync();
-        Departments = await _dbContext.Departments.ToListAsync();
-
-        var activeSemester = await _dbContext.Semesters.FirstOrDefaultAsync(s => s.IsActive);
-
-        foreach (var teacher in Teachers)
-        {
-            decimal totalHours = 0;
-
-            if (activeSemester != null)
-            {
-                var slots = await _dbContext.TimetableSlots
-                    .Where(t => t.TeacherId == teacher.Id && t.SemesterId == activeSemester.Id)
-                    .ToListAsync();
-
-                foreach (var slot in slots)
-                {
-                    var hours = (slot.EndTime.Hour - slot.StartTime.Hour) + 
-                               ((slot.EndTime.Minute - slot.StartTime.Minute) / 60m);
-                    totalHours += hours;
-                }
-            }
-
-            TeacherWorkloads[teacher.Id] = totalHours;
-        }
+        _teacherService = teacherService;
+        _departmentService = departmentService;
     }
 
+    /// <summary>
+    /// Load all teachers and departments
+    /// </summary>
+    public async Task OnGetAsync()
+    {
+        await LoadTeachersAsync();
+        await LoadDepartmentsAsync();
+    }
+
+    /// <summary>
+    /// Create new teacher
+    /// </summary>
     public async Task<IActionResult> OnPostAddAsync()
     {
         if (!ModelState.IsValid)
         {
-            await OnGetAsync();
+            await LoadTeachersAsync();
+            await LoadDepartmentsAsync();
             return Page();
         }
 
-        var codeExists = await _dbContext.Teachers.AnyAsync(t => t.EmployeeCode == NewTeacher.EmployeeCode);
-        if (codeExists)
+        var result = await _teacherService.CreateTeacherAsync(NewTeacher);
+
+        if (!result.IsSuccess)
         {
-            TempData["Error"] = $"Teacher with employee code '{NewTeacher.EmployeeCode}' already exists.";
-            await OnGetAsync();
+            TempData["Error"] = result.ErrorMessage;
+            await LoadTeachersAsync();
+            await LoadDepartmentsAsync();
             return Page();
         }
-
-        _dbContext.Teachers.Add(NewTeacher);
-        await _dbContext.SaveChangesAsync();
-
-        await _auditService.LogAsync("CREATE", "Teacher", NewTeacher.Id.ToString(),
-            null, $"Name: {NewTeacher.FullName}, Code: {NewTeacher.EmployeeCode}, Email: {NewTeacher.Email}");
 
         TempData["Success"] = $"Teacher '{NewTeacher.FullName}' added successfully.";
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostUpdateAsync(int id, string fullName, string employeeCode, string email, 
-        string designation, int departmentId, int maxWeeklyHours)
+    /// <summary>
+    /// Update existing teacher
+    /// </summary>
+    public async Task<IActionResult> OnPostUpdateAsync()
     {
-        var teacher = await _dbContext.Teachers.FindAsync(id);
-        if (teacher == null)
+        if (!ModelState.IsValid)
         {
-            TempData["Error"] = "Teacher not found.";
-            return RedirectToPage();
-        }
-
-        var codeExists = await _dbContext.Teachers.AnyAsync(t => t.EmployeeCode == employeeCode && t.Id != id);
-        if (codeExists)
-        {
-            TempData["Error"] = $"Employee code '{employeeCode}' already exists.";
-            await OnGetAsync();
+            await LoadTeachersAsync();
+            await LoadDepartmentsAsync();
             return Page();
         }
 
-        var oldValues = $"Name: {teacher.FullName}, Code: {teacher.EmployeeCode}";
+        var result = await _teacherService.UpdateTeacherAsync(EditTeacher);
 
-        teacher.FullName = fullName;
-        teacher.EmployeeCode = employeeCode;
-        teacher.Email = email;
-        teacher.Designation = designation;
-        teacher.DepartmentId = departmentId;
-        teacher.MaxWeeklyHours = maxWeeklyHours;
-
-        _dbContext.Teachers.Update(teacher);
-        await _dbContext.SaveChangesAsync();
-
-        var newValues = $"Name: {teacher.FullName}, Code: {teacher.EmployeeCode}";
-        await _auditService.LogAsync("UPDATE", "Teacher", teacher.Id.ToString(), oldValues, newValues);
+        if (!result.IsSuccess)
+        {
+            TempData["Error"] = result.ErrorMessage;
+            await LoadTeachersAsync();
+            await LoadDepartmentsAsync();
+            return Page();
+        }
 
         TempData["Success"] = "Teacher updated successfully.";
         return RedirectToPage();
     }
 
+    /// <summary>
+    /// Delete teacher
+    /// </summary>
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        var teacher = await _dbContext.Teachers.FindAsync(id);
-        if (teacher == null)
+        var result = await _teacherService.DeleteTeacherAsync(id);
+
+        if (!result.IsSuccess)
         {
-            TempData["Error"] = "Teacher not found.";
+            TempData["Error"] = result.ErrorMessage;
             return RedirectToPage();
         }
 
-        var slotCount = await _dbContext.TimetableSlots.CountAsync(t => t.TeacherId == id);
-        if (slotCount > 0)
+        TempData["Success"] = "Teacher deleted successfully.";
+        return RedirectToPage();
+    }
+
+    /// <summary>
+    /// Deactivate teacher without deleting
+    /// </summary>
+    public async Task<IActionResult> OnPostDeactivateAsync(int id)
+    {
+        var result = await _teacherService.DeactivateTeacherAsync(id);
+
+        if (!result.IsSuccess)
         {
-            TempData["Error"] = $"Cannot delete teacher. They have {slotCount} timetable slots assigned.";
-            await OnGetAsync();
-            return Page();
+            TempData["Error"] = result.ErrorMessage;
+            return RedirectToPage();
         }
 
-        var teacherName = teacher.FullName;
-        _dbContext.Teachers.Remove(teacher);
-        await _dbContext.SaveChangesAsync();
-
-        await _auditService.LogAsync("DELETE", "Teacher", id.ToString(),
-            $"Name: {teacherName}, Code: {teacher.EmployeeCode}", null);
-
-        TempData["Success"] = $"Teacher '{teacherName}' deleted successfully.";
+        TempData["Success"] = "Teacher deactivated successfully.";
         return RedirectToPage();
+    }
+
+    // ======== Helper Methods ========
+
+    private async Task LoadTeachersAsync()
+    {
+        var result = await _teacherService.GetAllAsync();
+        if (result.IsSuccess)
+        {
+            Teachers = result.Value!.ToList();
+            // Populate workload dictionary from DTOs for backward compatibility
+            foreach (var teacher in Teachers)
+            {
+                TeacherWorkloads[teacher.Id] = teacher.CurrentWeeklyHours;
+            }
+        }
+        else
+        {
+            ErrorMessage = result.ErrorMessage;
+            Teachers = new();
+        }
+    }
+
+    private async Task LoadDepartmentsAsync()
+    {
+        var result = await _departmentService.GetAllAsync();
+        if (result.IsSuccess)
+        {
+            Departments = result.Value!.ToList();
+        }
+        else
+        {
+            Departments = new();
+        }
     }
 }

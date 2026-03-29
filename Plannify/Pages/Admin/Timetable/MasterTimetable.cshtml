@@ -1,0 +1,309 @@
+@page "/Admin/Timetable/MasterTimetable"
+@model MasterTimetableModel
+@{
+    ViewData["Title"] = "Master Timetable View";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1>📋 Master Timetable View</h1>
+            <p class="text-muted">Comprehensive schedule view by Class, Teacher, and Room</p>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Slots</h5>
+                    <h2>@Model.TotalSlots</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Classes Scheduled</h5>
+                    <h2>@Model.TotalClasses</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Teachers Assigned</h5>
+                    <h2>@Model.TotalTeachers</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Rooms Utilized</h5>
+                    <h2>@Model.UtilizedRooms</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#classView" role="tab">
+                <i class="bi bi-book"></i> By Class
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#teacherView" role="tab">
+                <i class="bi bi-person"></i> By Teacher
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#roomView" role="tab">
+                <i class="bi bi-door-closed"></i> By Room
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- CLASS VIEW TAB -->
+        <div class="tab-pane fade show active" id="classView" role="tabpanel">
+            <div class="row">
+                <div class="col-md-12">
+                    @if (Model.ClassTimetables.Any())
+                    {
+                        @foreach (var classTT in Model.ClassTimetables)
+                        {
+                            <div class="card mb-4 border-primary">
+                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">@classTT.BatchName</h5>
+                                        <small>@classTT.TotalSlots slots scheduled</small>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Day</th>
+                                                    <th>Time</th>
+                                                    <th>Subject</th>
+                                                    <th>Teacher</th>
+                                                    <th>Room</th>
+                                                    <th>Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" })
+                                                {
+                                                    @if (classTT.SlotsByDay.ContainsKey(day))
+                                                    {
+                                                        @foreach (var slot in classTT.SlotsByDay[day])
+                                                        {
+                                                            <tr>
+                                                                <td><strong>@day</strong></td>
+                                                                <td>@slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm")</td>
+                                                                <td>@slot.SubjectName</td>
+                                                                <td>@slot.TeacherName</td>
+                                                                <td><span class="badge bg-secondary">@slot.RoomNumber</span></td>
+                                                                <td>
+                                                                    @if (slot.SlotType == "Lab")
+                                                                    {
+                                                                        <span class="badge bg-danger">Lab</span>
+                                                                    }
+                                                                    else if (slot.SlotType == "Both")
+                                                                    {
+                                                                        <span class="badge bg-warning">Hybrid</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="badge bg-info">Theory</span>
+                                                                    }
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">No class timetables available</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- TEACHER VIEW TAB -->
+        <div class="tab-pane fade" id="teacherView" role="tabpanel">
+            <div class="row">
+                <div class="col-md-12">
+                    @if (Model.TeacherTimetables.Any())
+                    {
+                        @foreach (var teacherTT in Model.TeacherTimetables)
+                        {
+                            <div class="card mb-4 border-success">
+                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">@teacherTT.TeacherName</h5>
+                                        <small>@teacherTT.SessionCount sessions | @teacherTT.TotalHours hours/week</small>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Day</th>
+                                                    <th>Time</th>
+                                                    <th>Subject</th>
+                                                    <th>Class</th>
+                                                    <th>Room</th>
+                                                    <th>Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" })
+                                                {
+                                                    @if (teacherTT.SlotsByDay.ContainsKey(day))
+                                                    {
+                                                        @foreach (var slot in teacherTT.SlotsByDay[day])
+                                                        {
+                                                            <tr>
+                                                                <td><strong>@day</strong></td>
+                                                                <td>@slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm")</td>
+                                                                <td>@slot.SubjectName</td>
+                                                                <td>@slot.ClassName</td>
+                                                                <td><span class="badge bg-secondary">@slot.RoomNumber</span></td>
+                                                                <td>
+                                                                    @if (slot.SlotType == "Lab")
+                                                                    {
+                                                                        <span class="badge bg-danger">Lab</span>
+                                                                    }
+                                                                    else if (slot.SlotType == "Both")
+                                                                    {
+                                                                        <span class="badge bg-warning">Hybrid</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="badge bg-info">Theory</span>
+                                                                    }
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">No teacher schedules available</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ROOM VIEW TAB -->
+        <div class="tab-pane fade" id="roomView" role="tabpanel">
+            <div class="row">
+                <div class="col-md-12">
+                    @if (Model.RoomTimetables.Any())
+                    {
+                        @foreach (var roomTT in Model.RoomTimetables)
+                        {
+                            <div class="card mb-4 border-warning">
+                                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-0">@roomTT.RoomNumber <span class="badge bg-secondary">@roomTT.RoomType</span></h5>
+                                        <small>@roomTT.TotalSlots slots | Utilization: @roomTT.Utilization%</small>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Day</th>
+                                                    <th>Time</th>
+                                                    <th>Class</th>
+                                                    <th>Subject</th>
+                                                    <th>Teacher</th>
+                                                    <th>Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" })
+                                                {
+                                                    @if (roomTT.SlotsByDay.ContainsKey(day))
+                                                    {
+                                                        @foreach (var slot in roomTT.SlotsByDay[day])
+                                                        {
+                                                            <tr>
+                                                                <td><strong>@day</strong></td>
+                                                                <td>@slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm")</td>
+                                                                <td>@slot.ClassName</td>
+                                                                <td>@slot.SubjectName</td>
+                                                                <td>@slot.TeacherName</td>
+                                                                <td>
+                                                                    @if (slot.SlotType == "Lab")
+                                                                    {
+                                                                        <span class="badge bg-danger">Lab</span>
+                                                                    }
+                                                                    else if (slot.SlotType == "Both")
+                                                                    {
+                                                                        <span class="badge bg-warning">Hybrid</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="badge bg-info">Theory</span>
+                                                                    }
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">No room schedules available</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-tabs .nav-link {
+        color: #6c757d;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+    }
+    
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+</style>

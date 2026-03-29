@@ -2,25 +2,30 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Plannify.Application.Contracts;
 using Plannify.Data;
-using Plannify.Models;
-using Plannify.Services;
+using Plannify.Domain.Entities;
 
 namespace Plannify.Pages.Admin.Teachers;
 
-[Authorize(Roles = "SuperAdmin")]
+[Authorize(Roles = "Admin")]
 public class ProfileModel : PageModel
 {
-    private readonly AppDbContext _dbContext;
-    private readonly AuditService _auditService;
+    private readonly ITeacherService _teacherService;
+    private readonly ISemesterService _semesterService;
+    private readonly ITimetableSlotService _timetableSlotService;
+    private readonly AppDbContext _context;
 
-    public ProfileModel(AppDbContext dbContext, AuditService auditService)
+    public ProfileModel(ITeacherService teacherService, ISemesterService semesterService, 
+        ITimetableSlotService timetableSlotService, AppDbContext context)
     {
-        _dbContext = dbContext;
-        _auditService = auditService;
+        _teacherService = teacherService;
+        _semesterService = semesterService;
+        _timetableSlotService = timetableSlotService;
+        _context = context;
     }
 
-    public Plannify.Models.Teacher? Teacher { get; set; }
+    public Teacher? Teacher { get; set; }
     public Semester? ActiveSemester { get; set; }
     public decimal CurrentHours { get; set; } = 0;
     public List<Subject> AssignedSubjects { get; set; } = new();
@@ -29,90 +34,63 @@ public class ProfileModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Teacher = await _dbContext.Teachers.Include(t => t.Department).FirstOrDefaultAsync(t => t.Id == id);
+        var teacherResult = await _teacherService.GetByIdAsync(id);
+        if (!teacherResult.IsSuccess || teacherResult.Value == null)
+        {
+            return NotFound();
+        }
+
+        Teacher = await _context.Teachers.Include(t => t.Department).FirstOrDefaultAsync(t => t.Id == id);
         if (Teacher == null)
         {
             return NotFound();
         }
 
-        ActiveSemester = await _dbContext.Semesters.FirstOrDefaultAsync(s => s.IsActive);
-
-        if (ActiveSemester != null)
+        var semesterResult = await _semesterService.GetCurrentSemesterAsync();
+        if (semesterResult.IsSuccess && semesterResult.Value != null)
         {
-            TimetableSlots = await _dbContext.TimetableSlots
-                .Include(t => t.Subject)
-                .Include(t => t.ClassBatch)
-                .Include(t => t.Room)
-                .Where(t => t.TeacherId == id && t.SemesterId == ActiveSemester.Id)
-                .ToListAsync();
+            ActiveSemester = await _context.Semesters.FirstOrDefaultAsync(s => s.Id == semesterResult.Value.Id);
 
-            foreach (var slot in TimetableSlots)
+            if (ActiveSemester != null)
             {
-                var hours = (slot.EndTime.Hour - slot.StartTime.Hour) + 
-                           ((slot.EndTime.Minute - slot.StartTime.Minute) / 60m);
-                CurrentHours += hours;
-            }
+                var semesterId = ActiveSemester.Id;
+                TimetableSlots = await _context.TimetableSlots
+                    .Include(t => t.Subject)
+                    .Include(t => t.ClassBatch)
+                    .Include(t => t.Room)
+                    .Where(t => t.TeacherId == id && t.SemesterId == semesterId)
+                    .ToListAsync();
 
-            var subjectIds = TimetableSlots
-                .Where(t => t.SubjectId.HasValue)
-                .Select(t => t.SubjectId.Value)
-                .Distinct()
-                .ToList();
+                foreach (var slot in TimetableSlots)
+                {
+                    var hours = (slot.EndTime.Hour - slot.StartTime.Hour) + 
+                               ((slot.EndTime.Minute - slot.StartTime.Minute) / 60m);
+                    CurrentHours += hours;
+                }
 
-            AssignedSubjects = await _dbContext.Subjects
-                .Where(s => subjectIds.Contains(s.Id))
-                .ToListAsync();
-
-            foreach (var subject in AssignedSubjects)
-            {
-                var classCount = await _dbContext.TimetableSlots
-                    .Where(t => t.SubjectId == subject.Id && t.TeacherId == id && t.SemesterId == ActiveSemester.Id)
-                    .Select(t => t.ClassBatchId)
+                var subjectIds = TimetableSlots
+                    .Where(t => t.SubjectId.HasValue)
+                    .Select(t => t.SubjectId!.Value)
                     .Distinct()
-                    .CountAsync();
+                    .ToList();
 
-                SubjectClassCount[subject.Id] = classCount;
+                AssignedSubjects = await _context.Subjects
+                    .Where(s => subjectIds.Contains(s.Id))
+                    .ToListAsync();
+
+                foreach (var subject in AssignedSubjects)
+                {
+                    var classCount = TimetableSlots
+                        .Where(t => t.SubjectId == subject.Id && t.TeacherId == id)
+                        .Select(t => t.ClassBatchId)
+                        .Distinct()
+                        .Count();
+
+                    SubjectClassCount[subject.Id] = classCount;
+                }
             }
         }
 
         return Page();
-    }
-
-    public async Task<IActionResult> OnPostCreateAccountAsync(int id)
-    {
-        var teacher = await _dbContext.Teachers.FindAsync(id);
-        if (teacher == null)
-        {
-            TempData["Error"] = "Teacher not found.";
-            return RedirectToPage();
-        }
-
-        var userExists = await _dbContext.Users.AnyAsync(u => u.Email == teacher.Email);
-        if (userExists)
-        {
-            TempData["Error"] = "User account for this email already exists.";
-            return RedirectToPage(new { id });
-        }
-
-        var newUser = new ApplicationUser
-        {
-            UserName = teacher.Email,
-            Email = teacher.Email,
-            FullName = teacher.FullName,
-            Role = "Teacher",
-            DepartmentId = teacher.DepartmentId,
-            TeacherId = teacher.Id,
-            IsActive = true,
-            EmailConfirmed = true
-        };
-
-        var result = await _dbContext.Users.AddAsync(newUser);
-        await _dbContext.SaveChangesAsync();
-
-        await _auditService.LogAsync("CREATE", "ApplicationUser", newUser.Id, 
-            null, $"Username: {newUser.Email}, Role: Teacher, Linked to: {teacher.FullName}");
-
-        TempData["Success"] = $"User account created for {teacher.FullName}. Email: {teacher.Email}";
-        return RedirectToPage(new { id });
     }
 }

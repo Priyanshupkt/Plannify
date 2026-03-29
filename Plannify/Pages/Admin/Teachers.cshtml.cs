@@ -1,22 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Plannify.Data;
-using Plannify.Models;
+using Plannify.Application.Contracts;
+using Plannify.Application.DTOs;
 
 namespace Plannify.Pages.Admin;
 
-public class TeachersModel(AppDbContext dbContext) : PageModel
+public class TeachersModel(ITeacherService teacherService) : PageModel
 {
-    private readonly AppDbContext _dbContext = dbContext;
+    private readonly ITeacherService _teacherService = teacherService;
 
-    public List<Plannify.Models.Teacher> Teachers { get; set; } = new();
+    public List<TeacherDto> Teachers { get; set; } = new();
 
     [BindProperty]
-    public Plannify.Models.Teacher NewTeacher { get; set; } = new();
+    public CreateTeacherRequest NewTeacher { get; set; } = new();
 
     public async Task OnGetAsync()
     {
-        Teachers = await Task.FromResult(_dbContext.Teachers.ToList());
+        var result = await _teacherService.GetAllAsync();
+        if (result.IsSuccess)
+            Teachers = result.Value?.ToList() ?? new();
     }
 
     public async Task<IActionResult> OnPostAddAsync()
@@ -27,19 +29,26 @@ public class TeachersModel(AppDbContext dbContext) : PageModel
             return Page();
         }
 
-        _dbContext.Teachers.Add(NewTeacher);
-        await _dbContext.SaveChangesAsync();
+        var result = await _teacherService.CreateTeacherAsync(NewTeacher);
+        if (!result.IsSuccess)
+        {
+            ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to add teacher");
+            await OnGetAsync();
+            return Page();
+        }
+
+        TempData["Success"] = "Teacher added successfully.";
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        var teacher = await _dbContext.Teachers.FindAsync(id);
-        if (teacher != null)
-        {
-            _dbContext.Teachers.Remove(teacher);
-            await _dbContext.SaveChangesAsync();
-        }
+        var result = await _teacherService.DeleteTeacherAsync(id);
+        if (result.IsSuccess)
+            TempData["Success"] = "Teacher deleted successfully.";
+        else
+            TempData["Error"] = result.ErrorMessage ?? "Failed to delete teacher";
+
         return RedirectToPage();
     }
 }

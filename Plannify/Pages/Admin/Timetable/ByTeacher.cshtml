@@ -2,22 +2,17 @@
 @model Plannify.Pages.Admin.Timetable.ByTeacherModel
 @{
     ViewData["Title"] = "Timetable by Teacher";
+    Layout = "/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col-lg-8">
-            <h2>Timetable by Teacher</h2>
-        </div>
-    </div>
-
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Top Controls -->
-    <div class="row mb-4">
-        <div class="col-lg-8">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label for="teacherSelect" class="form-label">Select Teacher</label>
-                    <select class="form-select" id="teacherSelect" onchange="changeTeacher()">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div class="lg:col-span-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="teacherSelect" class="block text-xs font-bold text-on-surface-variant mb-2">Select Teacher</label>
+                    <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="teacherSelect" onchange="changeTeacher()">
                         <option value="">-- Select Teacher --</option>
                         @foreach (var teacher in Model.Teachers)
                         {
@@ -32,9 +27,9 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="semesterSelect" class="form-label">Select Semester</label>
-                    <select class="form-select" id="semesterSelect" onchange="changeSemester()">
+                <div>
+                    <label for="semesterSelect" class="block text-xs font-bold text-on-surface-variant mb-2">Select Semester</label>
+                    <select class="w-full px-4 py-3 bg-surface-container-low border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/30" id="semesterSelect" onchange="changeSemester()">
                         <option value="">-- Select Semester --</option>
                         @foreach (var sem in Model.Semesters)
                         {
@@ -51,72 +46,84 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-4">
-            <div class="d-grid gap-2 d-lg-flex justify-content-lg-end" style="height: 100%; align-items: flex-end;">
-                <form method="post" asp-page-handler="PrintPdf" style="display: inline;">
-                    <input type="hidden" name="teacherId" value="@Model.CurrentTeacher?.Id">
-                    <input type="hidden" name="semesterId" value="@Model.CurrentSemester?.Id">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-print"></i> Print PDF
-                    </button>
-                </form>
-            </div>
+        <div class="lg:col-span-1 flex items-end">
+            <form method="post" asp-page-handler="PrintPdf" class="w-full">
+                <input type="hidden" name="teacherId" value="@Model.CurrentTeacher?.Id">
+                <input type="hidden" name="semesterId" value="@Model.CurrentSemester?.Id">
+                <button type="submit" class="w-full bg-primary hover:bg-primary-container text-on-primary px-4 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all">
+                    <span class="material-symbols-outlined inline mr-2 -mt-1">print</span>
+                    Print PDF
+                </button>
+            </form>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Left: Grid -->
-        <div class="col-lg-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left: Grid (2 cols) -->
+        <div class="lg:col-span-2">
             @if (Model.CurrentTeacher != null && Model.CurrentSemester != null && Model.TimeRanges.Count > 0)
             {
-                <div class="card">
-                    <div class="card-body p-0" style="overflow-x: auto;">
-                        <table class="table table-bordered table-sm mb-0">
-                            <thead class="table-light">
+                <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-surface-container-low/50 border-b border-outline-variant/20">
                                 <tr>
-                                    <th class="text-center" style="min-width: 100px;">Time</th>
+                                    <th class="text-center px-4 py-4 font-bold text-on-surface min-w-[100px]" style="width: 100px;">Time</th>
                                     @foreach (var day in Model.Days)
                                     {
-                                        <th class="text-center" style="min-width: 120px;">@day.Substring(0, 3)</th>
+                                        <th class="text-center px-4 py-4 font-bold text-on-surface min-w-[120px]" style="width: 120px;">@day.Substring(0, 3)</th>
                                     }
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var timeRange in Model.TimeRanges)
                                 {
-                                    <tr>
-                                        <td class="text-center text-nowrap fw-bold">
-                                            <small>@timeRange</small>
+                                    <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low/30 transition-colors">
+                                        <td class="text-center px-4 py-4 font-bold text-on-surface text-xs text-nowrap">
+                                            @timeRange
                                         </td>
                                         @foreach (var day in Model.Days)
                                         {
                                             var slot = Model.Grid[day][timeRange];
-                                            string bgClass = "bg-light";
+                                            string bgClass = "";
                                             
-                                            if (slot != null)
+                                            if (slot != null && slot.SlotType == "Theory")
                                             {
-                                                bgClass = slot.SlotType switch
-                                                {
-                                                    "Theory" => "bg-white",
-                                                    "Lab" => "tg-lab",
-                                                    "GAP" => "tg-gap",
-                                                    "Elective" => "bg-light-purple",
-                                                    _ => "bg-light"
-                                                };
+                                                bgClass = "bg-white";
+                                            }
+                                            else if (slot != null && slot.SlotType == "Lab")
+                                            {
+                                                bgClass = "bg-blue-50";
+                                            }
+                                            else if (slot != null && slot.SlotType == "GAP")
+                                            {
+                                                bgClass = "bg-gray-100";
+                                            }
+                                            else
+                                            {
+                                                bgClass = "bg-surface-container-low/20";
                                             }
 
-                                            <td class="@bgClass text-center align-middle" style="min-height: 60px;">
-                                                @if (slot != null)
+                                            <td class="text-center px-4 py-4 align-middle @bgClass" style="min-height: 60px;">
+                                                @if (slot != null && slot.SlotType == "GAP")
                                                 {
-                                                    <div class="small">
-                                                        <strong>@slot.Subject?.Name</strong><br>
-                                                        <span class="text-muted">@slot.ClassBatch?.BatchName</span><br>
-                                                        <span class="text-muted">@slot.Room?.RoomNumber</span>
+                                                    <span class="text-on-surface-variant italic text-xs">— GAP —</span>
+                                                }
+                                                else if (slot != null)
+                                                {
+                                                    <div class="text-xs space-y-1">
+                                                        <div class="font-bold text-on-surface">@slot.Subject?.Code</div>
+                                                        @if (slot.SlotType == "Lab")
+                                                        {
+                                                            <span class="inline-block px-2 py-1 bg-blue-200 text-blue-800 text-xs font-bold rounded">LAB</span>
+                                                        }
+                                                        <div class="text-on-surface-variant">@slot.ClassBatch?.BatchName</div>
+                                                        <div class="text-on-surface-variant">@slot.Room?.RoomNumber</div>
                                                     </div>
                                                 }
                                                 else
                                                 {
-                                                    <span class="text-muted">Free</span>
+                                                    <span class="text-on-surface-variant text-xs">Free</span>
                                                 }
                                             </td>
                                         }
@@ -129,101 +136,109 @@
             }
             else
             {
-                <div class="alert alert-info">
-                    Select a teacher and semester to view the timetable.
+                <div class="bg-info/10 border border-info/30 rounded-2xl p-6 text-center">
+                    <span class="material-symbols-outlined text-2xl text-info block mb-2">info</span>
+                    <p class="text-sm text-on-surface">Select a teacher and semester to view the timetable.</p>
                 </div>
             }
         </div>
 
-        <!-- Right: Workload Panel -->
+        <!-- Right: Workload Panel (1 col) -->
         @if (Model.CurrentTeacher != null)
         {
-            <div class="col-lg-4">
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h6 class="mb-0">Weekly Workload</h6>
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Weekly Workload Card -->
+                <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
+                    <div class="px-6 py-4 border-b border-outline-variant/20 bg-surface-container-low/50">
+                        <h6 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">schedule</span>
+                            Weekly Workload
+                        </h6>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span><strong>Teaching Hours</strong></span>
-                                <span class="badge bg-primary">@Model.TotalTeachingHours / @Model.MaxWeeklyHours hrs</span>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-bold text-on-surface">Teaching Hours</span>
+                                <span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed text-xs font-bold rounded-full">@Model.TotalTeachingHours / @Model.MaxWeeklyHours hrs</span>
                             </div>
                             @{
                                 double percentage = Model.MaxWeeklyHours > 0 ? (double)Model.TotalTeachingHours / Model.MaxWeeklyHours * 100 : 0;
-                                string progressClass = percentage <= 75 ? "bg-success" : percentage <= 90 ? "bg-warning" : "bg-danger";
+                                string progressColor = percentage <= 75 ? "bg-green-500" : percentage <= 90 ? "bg-yellow-500" : "bg-red-500";
                             }
-                            <div class="progress" role="progressbar">
-                                <div class="progress-bar @progressClass" style="width: @Math.Min(percentage, 100)%"></div>
+                            <div class="w-full bg-surface-container-low rounded-full h-2 overflow-hidden">
+                                <div class="@progressColor h-full transition-all" style="width: @Math.Min(percentage, 100)%"></div>
                             </div>
                         </div>
 
-                        <hr>
-
-                        <div class="mb-3">
-                            <h6 class="mb-3">Hours Breakdown</h6>
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="small">Theory</span>
-                                    <span class="badge bg-light text-dark">@Model.TheoryHours hrs</span>
+                        <div class="pt-2 border-t border-outline-variant/20">
+                            <h6 class="text-xs font-bold text-on-surface-variant mb-3">Hours Breakdown</h6>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-on-surface-variant">Theory</span>
+                                    <span class="px-3 py-1 bg-gray-100 text-gray-800 font-bold rounded">@Model.TheoryHours hrs</span>
                                 </div>
-                            </div>
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="small">Lab</span>
-                                    <span class="badge tg-lab text-dark">@Model.LabHours hrs</span>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-on-surface-variant">Lab</span>
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 font-bold rounded">@Model.LabHours hrs</span>
                                 </div>
-                            </div>
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="small">GAP</span>
-                                    <span class="badge tg-gap text-dark">@Model.GapHours hrs</span>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-on-surface-variant">GAP</span>
+                                    <span class="px-3 py-1 bg-gray-200 text-gray-800 font-bold rounded">@Model.GapHours hrs</span>
                                 </div>
                             </div>
                         </div>
-
-                        <hr>
-
-                        @if (Model.DaysWithNoClasses.Count > 0)
-                        {
-                            <div>
-                                <h6 class="mb-2">Free Days</h6>
-                                <div class="d-flex flex-wrap gap-2">
-                                    @foreach (var day in Model.DaysWithNoClasses)
-                                    {
-                                        <span class="badge bg-success">@day.Substring(0, 3)</span>
-                                    }
+                        
+                        <div class="pt-2 border-t border-outline-variant/20">
+                            @if (Model.DaysWithNoClasses.Count > 0)
+                            {
+                                <div>
+                                    <h6 class="text-xs font-bold text-on-surface-variant mb-2">Free Days</h6>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach (var day in Model.DaysWithNoClasses)
+                                        {
+                                            <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-200">@day.Substring(0, 3)</span>
+                                        }
+                                    </div>
                                 </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-info mb-0">
-                                <small>No free days this week.</small>
-                            </div>
-                        }
+                            }
+                            else
+                            {
+                                <div class="bg-info/10 border border-info/30 rounded-lg p-3">
+                                    <small class="text-xs text-info">No free days this week.</small>
+                                </div>
+                            }
+                        </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">Teacher Info</h6>
+                <!-- Teacher Info Card -->
+                <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm">
+                    <div class="px-6 py-4 border-b border-outline-variant/20 bg-surface-container-low/50">
+                        <h6 class="text-sm font-bold text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">person</span>
+                            Teacher Info
+                        </h6>
                     </div>
-                    <div class="card-body small">
-                        <p class="mb-2">
-                            <strong>Name:</strong> @Model.CurrentTeacher.FullName
+                    <div class="p-6 space-y-3 text-xs">
+                        <p>
+                            <span class="font-bold text-on-surface-variant">Name:</span> 
+                            <span class="text-on-surface">@Model.CurrentTeacher.FullName</span>
                         </p>
-                        <p class="mb-2">
-                            <strong>Initials:</strong> <span class="badge bg-info">@Model.CurrentTeacher.Initials</span>
+                        <p>
+                            <span class="font-bold text-on-surface-variant">Initials:</span> 
+                            <span class="px-2 py-1 bg-cyan-100 text-cyan-800 font-bold rounded inline-block">@Model.CurrentTeacher.Initials</span>
                         </p>
-                        <p class="mb-2">
-                            <strong>Employee Code:</strong> @Model.CurrentTeacher.EmployeeCode
+                        <p>
+                            <span class="font-bold text-on-surface-variant">Employee Code:</span> 
+                            <span class="text-on-surface">@Model.CurrentTeacher.EmployeeCode</span>
                         </p>
-                        <p class="mb-2">
-                            <strong>Designation:</strong> @Model.CurrentTeacher.Designation
+                        <p>
+                            <span class="font-bold text-on-surface-variant">Designation:</span> 
+                            <span class="text-on-surface">@Model.CurrentTeacher.Designation</span>
                         </p>
-                        <p class="mb-0">
-                            <strong>Max Hours/Week:</strong> @Model.MaxWeeklyHours
+                        <p class="border-t border-outline-variant/20 pt-3 mt-3">
+                            <span class="font-bold text-on-surface-variant">Max Hours/Week:</span> 
+                            <span class="text-on-surface font-bold">@Model.MaxWeeklyHours</span>
                         </p>
                     </div>
                 </div>
